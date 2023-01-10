@@ -1,0 +1,13 @@
+<customglplugin scriptid="customscript_sdb_global_plugin">
+  <description></description>
+  <isinactive>F</isinactive>
+  <loglevel>DEBUG</loglevel>
+  <name>SDB |Custom Global GL Plug-in</name>
+  <notifyadmins>F</notifyadmins>
+  <notifyemails></notifyemails>
+  <notifyowner>T</notifyowner>
+  <notifyuser>F</notifyuser>
+  <runasrole></runasrole>
+  <scriptfile>[/SuiteScripts/SDB_Global_GL_Plug-in_SMZU]</scriptfile>
+  <status>TESTING</status>
+</customglplugin>

@@ -1,0 +1,10 @@
+<usereventscript scriptid="customscript_sdb_create_adjust_negative">
+  <description></description>
+  <isinactive>T</isinactive>
+  <name>SDB | Create Adjustment negative IA</name>
+  <notifyadmins>F</notifyadmins>
+  <notifyemails></notifyemails>
+  <notifyowner>T</notifyowner>
+  <notifyuser>F</notifyuser>
+  <scriptfile>[/SuiteScripts/SDB_create_adjustment_IAC.js]</scriptfile>
+</usereventscript>
