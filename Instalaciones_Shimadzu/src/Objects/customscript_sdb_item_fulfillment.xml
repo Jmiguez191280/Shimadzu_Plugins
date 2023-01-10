@@ -1,0 +1,10 @@
+<usereventscript scriptid="customscript_sdb_item_fulfillment">
+  <description></description>
+  <isinactive>F</isinactive>
+  <name>SDB | Item Fullfillment UE</name>
+  <notifyadmins>F</notifyadmins>
+  <notifyemails></notifyemails>
+  <notifyowner>T</notifyowner>
+  <notifyuser>F</notifyuser>
+  <scriptfile>[/SuiteScripts/SDB_set_item_fulfillment.js]</scriptfile>
+</usereventscript>
