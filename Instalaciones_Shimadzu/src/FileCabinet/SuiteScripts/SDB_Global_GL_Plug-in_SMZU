@@ -151,11 +151,11 @@
                 terceros = terceros.split(',').indexOf(invAccount);
             }
 
-            nlapiLogExecution("DEBUG", "customLines.getCount()", customLines.getCount());
-            nlapiLogExecution("DEBUG", "que es?", isInterCompany + '< >' + terceros);
-            nlapiLogExecution("DEBUG", "diff", diff);
-            nlapiLogExecution("DEBUG", "instalacion", instalacion);
-
+            // nlapiLogExecution("DEBUG", "customLines.getCount()", customLines.getCount());
+            nlapiLogExecution("DEBUG", "isInterCompany + '< >' + terceros", isInterCompany + '< >' + terceros);
+            nlapiLogExecution("DEBUG", "diff date", diff);
+            nlapiLogExecution("DEBUG", "Req instalacion", instalacion);
+            nlapiLogExecution("AUDIT", " installed ", installed);
             if (installed == 'T') {// Si se intalo 100%
                 nlapiLogExecution("AUDIT", " installed <<>>", installed);
                 var count = 0;
@@ -268,7 +268,9 @@
 
                     //}
                 }
-            } else if (diff && instalacion == 'F' && !installed) {
+            } else if (diff && instalacion == 'F' && installed == 'F') {
+
+                // nlapiLogExecution("DEBUG", "instalacion -- diff", diff + '--' + instalacion + '--' + installed);
                 for (var i = 0; i < standardLines.getCount(); i++) {
                     var currentAcc = standardLines.getLine(i).getAccountId();
                     nlapiLogExecution("DEBUG", "currentAcc", currentAcc);
@@ -435,7 +437,7 @@
                 }
                 // nlapiSubmitField(recordType, rcdId, 'custbody_sdb_date_gl_plugin', 'T', true);
             } else if (!diff && instalacion == 'F') {
-                nlapiLogExecution("DEBUG", "diff else=====", diff);
+                nlapiLogExecution("DEBUG", "!diff && instalacion == 'F'", diff + '--' + instalacion);
                 for (var i = 0; i < standardLines.getCount(); i++) {
                     var currentLocation = standardLines.getLine(i).getLocationId();
                     var entity = standardLines.getLine(i).getEntityId();
@@ -443,55 +445,7 @@
                     if (!currentAcc) continue;
                     var accType = nlapiLookupField('account', currentAcc, 'type');
                     //  if (i > 0) {
-                    if (currentAcc == configData.custrecord_sdb_discount_puente) {// Si la cuenta es puente ("41799 Sales : Sales, (Interim)) se balancea y se setea nueva linea con cuenta descuento (intercompany o terceros)
 
-                        if (Number(standardLines.getLine(i).getCreditAmount()) > 0) {
-                            nlapiLogExecution("DEBUG", "Costo creditmemo if", standardLines.getLine(i).getCreditAmount());
-                            var newLine = customLines.addNewLine();
-                            if (standardLines.getLine(i).getMemo()) newLine.setMemo(standardLines.getLine(i).getMemo())
-                            if (standardLines.getLine(i).getClassId()) newLine.setClassId(standardLines.getLine(i).getClassId());
-                            if (standardLines.getLine(i).getDepartmentId()) newLine.setDepartmentId(standardLines.getLine(i).getDepartmentId());
-                            if (entityCM && accType != 'AcctRec') newLine.setEntityId(parseInt(entityCM))
-                            if (standardLines.getLine(i).getSegmentValueId('cseg1')) newLine.setSegmentValueId('cseg1', standardLines.getLine(i).getSegmentValueId('cseg1'));
-                            newLine.setDebitAmount(Number(standardLines.getLine(i).getCreditAmount()));
-                            newLine.setAccountId(parseInt(currentAcc));
-
-                            var newLine = customLines.addNewLine();
-                            if (standardLines.getLine(i).getMemo()) newLine.setMemo(standardLines.getLine(i).getMemo())
-                            if (standardLines.getLine(i).getClassId()) newLine.setClassId(standardLines.getLine(i).getClassId());
-                            if (standardLines.getLine(i).getDepartmentId()) newLine.setDepartmentId(standardLines.getLine(i).getDepartmentId());
-                            if (entityCM && accType != 'AcctRec') newLine.setEntityId(parseInt(entityCM))
-                            if (standardLines.getLine(i).getSegmentValueId('cseg1')) newLine.setSegmentValueId('cseg1', standardLines.getLine(i).getSegmentValueId('cseg1'));
-                            newLine.setCreditAmount(Number(standardLines.getLine(i).getCreditAmount()));
-                            if (isInterCompany != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_inv_art_intercom));//41200 Sales : Sales, Intercompany
-                            if (terceros != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_inv_art_3ro));//41100 Sales : Sales, 3rd Company
-                            // if (isInterCompany != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_discount_inter_acc));
-                            // if (terceros != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_discount_3ro_acc));
-                        } else if (Number(standardLines.getLine(i).getDebitAmount()) > 0) {
-                            nlapiLogExecution("DEBUG", "Costo creditmemo elseif", standardLines.getLine(i).getDebitAmount());
-                            var newLine = customLines.addNewLine();
-                            if (standardLines.getLine(i).getMemo()) newLine.setMemo(standardLines.getLine(i).getMemo())
-                            if (standardLines.getLine(i).getClassId()) newLine.setClassId(standardLines.getLine(i).getClassId());
-                            if (standardLines.getLine(i).getDepartmentId()) newLine.setDepartmentId(standardLines.getLine(i).getDepartmentId());
-                            if (entityCM && accType != 'AcctRec') newLine.setEntityId(parseInt(entityCM))
-                            if (standardLines.getLine(i).getSegmentValueId('cseg1')) newLine.setSegmentValueId('cseg1', standardLines.getLine(i).getSegmentValueId('cseg1'));
-                            newLine.setCreditAmount(Number(standardLines.getLine(i).getDebitAmount()));
-                            newLine.setAccountId(parseInt(currentAcc));
-
-                            var newLine = customLines.addNewLine();
-                            if (standardLines.getLine(i).getMemo()) newLine.setMemo(standardLines.getLine(i).getMemo())
-                            if (standardLines.getLine(i).getClassId()) newLine.setClassId(standardLines.getLine(i).getClassId());
-                            if (standardLines.getLine(i).getDepartmentId()) newLine.setDepartmentId(standardLines.getLine(i).getDepartmentId());
-                            if (entityCM && accType != 'AcctRec') newLine.setEntityId(parseInt(entityCM))
-                            if (standardLines.getLine(i).getSegmentValueId('cseg1')) newLine.setSegmentValueId('cseg1', standardLines.getLine(i).getSegmentValueId('cseg1'));
-                            newLine.setDebitAmount(Number(standardLines.getLine(i).getDebitAmount()));
-                            if (isInterCompany != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_inv_art_intercom));//41200 Sales : Sales, Intercompany
-                            if (terceros != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_inv_art_3ro));//41100 Sales : Sales, 3rd Company
-                            // if (isInterCompany != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_discount_inter_acc));
-                            // if (terceros != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_discount_3ro_acc));
-
-                        }
-                    }
                     if (Number(standardLines.getLine(i).getCreditAmount()) > 0) {
                         var newLine = customLines.addNewLine();
                         newLine.setDebitAmount(Number(standardLines.getLine(i).getCreditAmount()));
@@ -516,8 +470,7 @@
                     }
                     // }
                 }
-            }
-            if (instalacion == 'T' && installed == 'F' && !diff) {// Verificar si esto de que necesite instalacion y no este instalada
+            } else if (instalacion == 'T' && installed == 'F' && !diff) {// Verificar si esto de que necesite instalacion y no este instalada || !diff
 
                 for (var i = 0; i < standardLines.getCount(); i++) {
                     var currentAcc = standardLines.getLine(i).getAccountId();
@@ -578,6 +531,79 @@
                     }
                     //}
                 }
+            }else if (instalacion == 'T' && installed == 'F' && diff) {// Verificar si esto de que necesite instalacion y no este instalada || !diff falsa
+
+                for (var i = 0; i < standardLines.getCount(); i++) {
+                    var currentAcc = standardLines.getLine(i).getAccountId();
+                    if (!currentAcc) continue;
+                    var accType = nlapiLookupField('account', currentAcc, 'type');
+                    var currentLocation = standardLines.getLine(i).getLocationId();
+                    if (!currentLocation) continue;
+                    var entity = standardLines.getLine(i).getEntityId();
+                    // if (i > 0) {
+
+                    if (Number(standardLines.getLine(i).getCreditAmount()) > 0 && currentAcc == ctaPuenteInv) {// Si la cuenta es puente ("41799 Sales : Sales, (Interim)) se balancea y se setea nueva linea con cuenta descuento (intercompany o terceros)
+                        nlapiLogExecution("DEBUG", "if 1 diff>>", instalacion);
+                        var newLine = customLines.addNewLine();
+                        newLine.setDebitAmount(Number(standardLines.getLine(i).getCreditAmount()));
+                        newLine.setAccountId(parseInt(currentAcc));
+                        newLine.setLocationId(parseInt(currentLocation));
+                        if (standardLines.getLine(i).getMemo()) newLine.setMemo(standardLines.getLine(i).getMemo())
+                        if (standardLines.getLine(i).getClassId()) newLine.setClassId(standardLines.getLine(i).getClassId());
+                        if (standardLines.getLine(i).getDepartmentId()) newLine.setDepartmentId(standardLines.getLine(i).getDepartmentId());
+                        if (entity && accType != 'AcctRec') newLine.setEntityId(parseInt(entity))
+                        if (standardLines.getLine(i).getSegmentValueId('cseg1')) newLine.setSegmentValueId('cseg1', standardLines.getLine(i).getSegmentValueId('cseg1'));
+                         
+                        var newLine = customLines.addNewLine();
+                        newLine.setCreditAmount(Number(standardLines.getLine(i).getCreditAmount()));
+                        newLine.setLocationId(parseInt(currentLocation));
+                        if (standardLines.getLine(i).getMemo()) newLine.setMemo(standardLines.getLine(i).getMemo())
+                        if (standardLines.getLine(i).getClassId()) newLine.setClassId(standardLines.getLine(i).getClassId());
+                        if (standardLines.getLine(i).getDepartmentId()) newLine.setDepartmentId(standardLines.getLine(i).getDepartmentId());
+                        if (entity && accType != 'AcctRec') newLine.setEntityId(parseInt(entity))
+                        if (standardLines.getLine(i).getSegmentValueId('cseg1')) newLine.setSegmentValueId('cseg1', standardLines.getLine(i).getSegmentValueId('cseg1'));
+                        // newLine.setAccountId(parseInt(venta_instalacion));
+                        if (isInterCompany != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_inv_art_intercom));
+                        if (terceros != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_inv_art_3ro));
+
+                        // var newLine = customLines.addNewLine();
+                        // newLine.setCreditAmount(Number(standardLines.getLine(i).getCreditAmount()));
+                        // newLine.setLocationId(parseInt(currentLocation));
+                        // if (standardLines.getLine(i).getMemo()) newLine.setMemo(standardLines.getLine(i).getMemo())
+                        // if (standardLines.getLine(i).getClassId()) newLine.setClassId(standardLines.getLine(i).getClassId());
+                        // if (standardLines.getLine(i).getDepartmentId()) newLine.setDepartmentId(standardLines.getLine(i).getDepartmentId());
+                        // if (entity && accType != 'AcctRec') newLine.setEntityId(parseInt(entity))
+                        // if (standardLines.getLine(i).getSegmentValueId('cseg1')) newLine.setSegmentValueId('cseg1', standardLines.getLine(i).getSegmentValueId('cseg1'));
+                        //  newLine.setAccountId(parseInt(venta_instalacion));
+                        
+
+                    } else if (Number(standardLines.getLine(i).getDebitAmount()) > 0) {
+                        nlapiLogExecution("DEBUG", "if 2 diff>>", instalacion);
+                        var newLine = customLines.addNewLine();
+                        newLine.setCreditAmount(Number(standardLines.getLine(i).getDebitAmount()));
+                        newLine.setAccountId(parseInt(currentAcc));
+                        newLine.setLocationId(parseInt(currentLocation));
+                        if (standardLines.getLine(i).getMemo()) newLine.setMemo(standardLines.getLine(i).getMemo())
+                        if (standardLines.getLine(i).getClassId()) newLine.setClassId(standardLines.getLine(i).getClassId());
+                        if (standardLines.getLine(i).getDepartmentId()) newLine.setDepartmentId(standardLines.getLine(i).getDepartmentId());
+                        if (entity && accType != 'AcctRec') newLine.setEntityId(parseInt(entity))
+                        if (standardLines.getLine(i).getSegmentValueId('cseg1')) newLine.setSegmentValueId('cseg1', standardLines.getLine(i).getSegmentValueId('cseg1'));
+
+                        var newLine = customLines.addNewLine();
+                        newLine.setCreditAmount(Number(standardLines.getLine(i).getDebitAmount()));
+                        newLine.setLocationId(parseInt(currentLocation));
+                        if (standardLines.getLine(i).getMemo()) newLine.setMemo(standardLines.getLine(i).getMemo())
+                        if (standardLines.getLine(i).getClassId()) newLine.setClassId(standardLines.getLine(i).getClassId());
+                        if (standardLines.getLine(i).getDepartmentId()) newLine.setDepartmentId(standardLines.getLine(i).getDepartmentId());
+                        if (entity && accType != 'AcctRec') newLine.setEntityId(parseInt(entity))
+                        if (standardLines.getLine(i).getSegmentValueId('cseg1')) newLine.setSegmentValueId('cseg1', standardLines.getLine(i).getSegmentValueId('cseg1'));
+                        newLine.setAccountId(parseInt(venta_instalacion));
+                        if (isInterCompany != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_inv_art_intercom));
+                        if (terceros != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_inv_art_3ro));
+                        
+                    }
+                    //}
+                }
             }
         } catch (e) {
             nlapiLogExecution("DEBUG", "ERROR invoice", e);
@@ -587,18 +613,20 @@
     if (recordType == "creditmemo") {
 
         try {
-            var shipdate = transactionRecord.getFieldValue('shipdate');
+
             var invAccount = transactionRecord.getFieldValue('account');
             var createdfrom = transactionRecord.getFieldValue('createdfrom');
+            var validateDates = false;
             var configData = nlapiLookupField('customrecord_sdb_rcd_conf_plugin', 1, ['custrecord_sdb_is_3ros_acc', 'custrecord_sdb_adj_acc_puente', 'custrecordsdb_adj_a1', 'custrecord_sdb_inv_puente_acc', 'custrecord_sdb_inv_art_3ro', 'custrecord_sdb_inv_art_intercom', 'custrecord_sdb_inv_cos_intercom', 'custrecord_sdb_inv_gasto_3ro', 'custrecord_sdb_intercompany_acc_invoice', 'custrecord_sdb_cost_account', 'custrecord_sdb_cat_por_cobrar_inv', 'custrecord_sdb_inv_item_acc', 'custrecord_sdb_cuenta_costo', 'custrecord_sdb_inv_cost_ic', 'custrecord_sdb_art_account', 'custrecord_sdb_acc_expense', 'custrecord_sdb_inv_cost_3ro', 'custrecord_sdb_momento_vta_ci', 'custrecord_sdb_discount_puente', 'custrecord_sdb_discount_inter_acc', 'custrecord_sdb_discount_3ro_acc'])
             var isInterCompany = configData.custrecord_sdb_intercompany_acc_invoice;
             var terceros = configData.custrecord_sdb_is_3ros_acc;
             var invdata = getGlImpact('invoice', createdfrom);
-            //  nlapiLogExecution("AUDIT", "invdata ", JSON.stringify(invdata));
 
             if (createdfrom) {
-                installation = nlapiLookupField('invoice', createdfrom, ['custbody_sdb_requires_installation', 'createdfrom']);
+                installation = nlapiLookupField('invoice', createdfrom, ['custbody_sdb_requires_installation', 'createdfrom', 'shipdate', 'trandate']);
                 //   if (installation.custbody_sdb_requires_installation == 'T') itemValuesList(installation.createdfrom, transactionRecord, true); nlapiLogExecution("AUDIT", "installation ", JSON.stringify(installation));
+                if (installation && installation.shipdate) validateDates = installation.shipdate == installation.trandate;
+                nlapiLogExecution("AUDIT", "validateDates ", validateDates);
             }
             //  nlapiLogExecution("AUDIT", "location ", JSON.stringify(configData));
             if (isInterCompany) {
@@ -614,16 +642,14 @@
             for (var i = 0; i < standardLines.getCount(); i++) {
                 var currentAcc = standardLines.getLine(i).getAccountId();
                 var accType = nlapiLookupField('account', currentAcc, 'type');
-
                 var locationline = standardLines.getLine(i).getLocationId();
                 if (locationline) locationline = nlapiLookupField('location', locationline, 'name');
                 var acclocation = returnAccounForLocation(locationline, configData)
                 var entityCM = standardLines.getLine(i).getEntityId();
                 // nlapiLogExecution("DEBUG", "entity ", entityCM);
-
-                //  if (i > 0) {
+                // if (i > 0) {
                 var amountValue = 1;
-                if (currentAcc == configData.custrecord_sdb_cuenta_costo) {
+                if (currentAcc == configData.custrecord_sdb_cuenta_costo) {//"51999 Cost of Sales : Cost of Sales, (Interim)"
                     // nlapiLogExecution("DEBUG", "currentAcc IF", currentAcc);
                     // nlapiLogExecution("DEBUG", "configData.custrecord_sdb_cuenta_costo IF", configData.custrecord_sdb_cuenta_costo);
                     if (Number(standardLines.getLine(i).getCreditAmount()) > 0) {
@@ -644,7 +670,7 @@
                         if (entityCM && accType != 'AcctRec') newLine.setEntityId(parseInt(entityCM))
                         if (standardLines.getLine(i).getSegmentValueId('cseg1')) newLine.setSegmentValueId('cseg1', standardLines.getLine(i).getSegmentValueId('cseg1'));
                         newLine.setCreditAmount(Number(standardLines.getLine(i).getCreditAmount()));
-                        if (isInterCompany != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_inv_cost_ic));
+                        if (isInterCompany != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_inv_cost_ic));//"51450 Cost of Sales : Cost of Sales, Intercompany",
                         if (terceros != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_inv_cost_3ro));
 
                     } else if (Number(standardLines.getLine(i).getDebitAmount()) > 0) {
@@ -665,11 +691,10 @@
                         if (entityCM && accType != 'AcctRec') newLine.setEntityId(parseInt(entityCM))
                         if (standardLines.getLine(i).getSegmentValueId('cseg1')) newLine.setSegmentValueId('cseg1', standardLines.getLine(i).getSegmentValueId('cseg1'));
                         newLine.setDebitAmount(Number(standardLines.getLine(i).getDebitAmount()));
-                        if (isInterCompany != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_inv_cost_ic));
+                        if (isInterCompany != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_inv_cost_ic));//"51450 Cost of Sales : Cost of Sales, Intercompany"
                         if (terceros != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_inv_cost_3ro));
-
                     }
-                } else if (currentAcc == configData.custrecord_sdb_inv_item_acc /*|| articuloAcc.indexOf(currentAcc) != -1*/) {// Si la cuenta es puente ("41799 Sales : Sales, (Interim)) se balancea y se setea nueva linea con cuenta descuento (intercompany o terceros)
+                } else if (currentAcc == configData.custrecord_sdb_inv_item_acc) {// Si la cuenta es puente ("41799 Sales : Sales, (Interim)) se balancea y se setea nueva linea con cuenta descuento (intercompany o terceros)
                     // nlapiLogExecution("DEBUG", "currentAcc IF", currentAcc);
                     // nlapiLogExecution("DEBUG", "configData.custrecord_sdb_inv_item_acc IF", configData.custrecord_sdb_inv_item_acc);
                     if (Number(standardLines.getLine(i).getCreditAmount()) > 0) {
@@ -692,8 +717,8 @@
                         if (standardLines.getLine(i).getSegmentValueId('cseg1')) newLine.setSegmentValueId('cseg1', standardLines.getLine(i).getSegmentValueId('cseg1'));
                         newLine.setCreditAmount(Number(standardLines.getLine(i).getCreditAmount()));
                         //  newLine.setAccountId(parseInt(configData.custrecord_sdb_inv_art_3ro));
-                        if (isInterCompany != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_inv_art_intercom));
-                        if (terceros != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_inv_art_3ro));
+                        if (isInterCompany != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_inv_art_intercom));//41200 Sales : Sales, Intercompany
+                        if (terceros != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_inv_art_3ro));//41100 
                         // if (isInterCompany != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_discount_inter_acc));
                         // if (terceros != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_discount_3ro_acc));
 
@@ -717,15 +742,14 @@
                         if (standardLines.getLine(i).getSegmentValueId('cseg1')) newLine.setSegmentValueId('cseg1', standardLines.getLine(i).getSegmentValueId('cseg1'));
                         newLine.setDebitAmount(Number(standardLines.getLine(i).getDebitAmount()));
                         //  newLine.setAccountId(parseInt(configData.custrecord_sdb_inv_art_3ro));
-                        if (isInterCompany != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_inv_art_intercom));
+                        if (isInterCompany != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_inv_art_intercom));//41200 Sales : Sales, Intercompany
                         if (terceros != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_inv_art_3ro));
                         // if (isInterCompany != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_discount_inter_acc));
                         // if (terceros != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_discount_3ro_acc));
                         amountValue = Number(standardLines.getLine(i).getDebitAmount());
-
                     }
 
-                } else if (currentAcc == configData.custrecord_sdb_adj_acc_puente) {
+                } else if (currentAcc == configData.custrecord_sdb_adj_acc_puente) {//14101 Inventory : Inventory (Interim)
                     if (Number(standardLines.getLine(i).getCreditAmount()) > 0) {
                         nlapiLogExecution("DEBUG", "Gasto creditmemo if", standardLines.getLine(i).getCreditAmount());
                         var newLine = customLines.addNewLine();
@@ -748,7 +772,7 @@
                         if (entityCM && accType != 'AcctRec') newLine.setEntityId(parseInt(entityCM))
                         if (standardLines.getLine(i).getSegmentValueId('cseg1')) newLine.setSegmentValueId('cseg1', standardLines.getLine(i).getSegmentValueId('cseg1'));
                         amountValue = Number(standardLines.getLine(i).getCreditAmount());
-                        newLine.setAccountId(parseInt(acclocation));
+                        newLine.setAccountId(parseInt(acclocation));// Ej: A1 "14100 Inventory : Inventory"
 
                     } else if (Number(standardLines.getLine(i).getDebitAmount()) > 0) {
                         nlapiLogExecution("DEBUG", "Gasto creditmemo elseif", Number(standardLines.getLine(i).getDebitAmount()));
@@ -768,23 +792,22 @@
                         if (entityCM && accType != 'AcctRec') newLine.setEntityId(parseInt(entityCM))
                         if (standardLines.getLine(i).getSegmentValueId('cseg1')) newLine.setSegmentValueId('cseg1', standardLines.getLine(i).getSegmentValueId('cseg1'));
                         newLine.setDebitAmount(Number(standardLines.getLine(i).getDebitAmount()));
-                        newLine.setAccountId(parseInt(acclocation));
+                        newLine.setAccountId(parseInt(acclocation));// Ej: A1 "14100 Inventory : Inventory"
                         amountValue = Number(standardLines.getLine(i).getDebitAmount());
-
                     }
                 }
-                //    }
+                // }
             }
             var compareAcc = [configData.custrecord_sdb_momento_vta_ci, configData.custrecord_sdb_inv_art_3ro, configData.custrecord_sdb_inv_art_intercom, configData.custrecord_sdb_inv_gasto_3ro, configData.custrecord_sdb_inv_cos_intercom, configData.custrecord_sdb_inv_cost_ic, configData.custrecord_sdb_inv_cost_3ro]
-            nlapiLogExecution("DEBUG", "invdata ", JSON.stringify(invdata));
-            if (invdata && invdata.length) {
+            nlapiLogExecution("DEBUG", "invdata for CM", JSON.stringify(invdata));
+            if (invdata && invdata.length && !validateDates) {
                 for (var x = 0; x < invdata.length; x++) {
                     // nlapiLogExecution("audit", "invdata[x]", JSON.stringify(invdata[x]));
                     // nlapiLogExecution("audit", "custrecord_sdb_momento_vta_ci", configData.custrecord_sdb_momento_vta_ci);
                     //  if (invdata[x].account == configData.custrecord_sdb_momento_vta_ci || invdata[x].account == configData.custrecord_sdb_inv_art_3ro || invdata[x].account == configData.custrecord_sdb_inv_art_intercom || invdata[x].account == configData.custrecord_sdb_inv_gasto_3ro || invdata[x].account == configData.custrecord_sdb_inv_cos_intercom || invdata[x].account == configData.custrecord_sdb_inv_cost_ic || invdata[x].account == configData.custrecord_sdb_inv_cost_3ro) {
                     if (invdata[x].account && compareAcc.indexOf(invdata[x].account) != -1) {
                         if (invdata[x].debit) {
-                            nlapiLogExecution("DEBUG", "INV data invdata[x].debit", invdata[x].account);
+                            nlapiLogExecution("DEBUG", "INV data invdata[x].debit", invdata[x].accountNumber);
                             var newLine = customLines.addNewLine();
                             if (invdata[x].memo) newLine.setMemo(invdata[x].memo)
                             if (invdata[x].class) newLine.setClassId(parseInt(invdata[x].class));
@@ -794,7 +817,8 @@
                             newLine.setCreditAmount(Number(invdata[x].debit));
                             newLine.setAccountId(parseInt(invdata[x].account));
                         } else if (invdata[x].credit) {
-                            nlapiLogExecution("DEBUG", "INV data invdata[x].credit", invdata[x].account);
+                            nlapiLogExecution("DEBUG", "INV data invdata[x].credit number", invdata[x].accountNumber);
+
                             var newLine = customLines.addNewLine();
                             if (invdata[x].memo) newLine.setMemo(invdata[x].memo)
                             if (invdata[x].class) newLine.setClassId(parseInt(invdata[x].class));
@@ -840,21 +864,20 @@
             }
             nlapiLogExecution("AUDIT", "installation", installation.custbody_sdb_requires_installation);
             var customer = transactionRecord.getFieldValue('entity');
-            var customerData = nlapiLookupField('customer', customer, ['custentity_sla_bus_post_group'], 'T');
-            // nlapiLogExecution("AUDIT", "shipstatus ", shipstatus);
-            // nlapiLogExecution("AUDIT", "installaded ", installaded);
-            // nlapiLogExecution("AUDIT", "customerData", customerData.custentity_sla_bus_post_group);
+            var customerData = nlapiLookupField('customer', customer, ['custentity_sdb_posting_group'], 'T');
+          
+            // nlapiLogExecution("AUDIT", "customerData", customerData.custentity_sdb_posting_group);
             var configData = nlapiLookupField('customrecord_sdb_rcd_conf_plugin', 1, ['custrecord_sdb_3ro_acc_if', 'custrecord_sdb_intercompany_if', 'custrecord_sdb_adj_j1', 'custrecord_sdb_adj_tr1_tr2', 'custrecordsdb_adj_a1', 'custrecord_sdb_iac_location', 'custrecord_sdb_adj_ds', 'custrecord_sdb_is_3ros_acc', 'custrecord_sdb_inv_puente_acc', 'custrecord_sdb_inv_art_3ro', 'custrecord_sdb_inv_art_intercom', 'custrecord_sdb_inv_cos_intercom', 'custrecord_sdb_inv_gasto_3ro', 'custrecord_sdb_intercompany_acc_invoice', 'custrecord_sdb_cost_account', 'custrecord_sdb_cat_por_cobrar_inv', 'custrecord_sdb_inv_item_acc', 'custrecord_sdb_cuenta_costo', 'custrecord_sdb_inv_cost_ic', 'custrecord_sdb_art_account', 'custrecord_sdb_acc_expense', 'custrecord_sdb_inv_cost_3ro', 'custrecord_sdb_adj_iac', 'custrecord_sdb_discount_puente', 'custrecord_sdb_discount_inter_acc', 'custrecord_sdb_discount_3ro_acc'])
             var isInterCompany;
             var terceros;
             var interAccount = configData.custrecord_sdb_intercompany_if;
             var terceroAcount = configData.custrecord_sdb_3ro_acc_if;
             var costosAcc = [configData.custrecord_sdb_inv_cost_ic, configData.custrecord_sdb_inv_cost_3ro];
-            var salesAcc = [configData.custrecord_sdb_inv_art_3ro, configData, custrecord_sdb_inv_art_intercom];
+            var salesAcc = [configData.custrecord_sdb_inv_art_3ro, configData.custrecord_sdb_inv_art_intercom];
             var inv_data_to_set;
-            if (customerData.custentity_sla_bus_post_group) {
-                isInterCompany = customerData.custentity_sla_bus_post_group.indexOf('INTERCOMP');
-                terceros = customerData.custentity_sla_bus_post_group.indexOf('3RDCOMPANY');
+            if (customerData.custentity_sdb_posting_group) {
+                isInterCompany = customerData.custentity_sdb_posting_group.indexOf('INTERCOMP');
+                terceros = customerData.custentity_sdb_posting_group.indexOf('3RDCOMPANY');
             }
             // var typeAcc = isInterCompany > 0 ? interAccount : terceroAcount
             nlapiLogExecution("ERROR", "costosAcc", costosAcc);
@@ -978,7 +1001,6 @@
                 //     }
                 // }
 
-
             } else if (installation.custbody_sdb_requires_installation == 'F' && validateDate) {/*IF NOT requires_installation and IF TRANDATE == INVOICE TRANDATE*/
                 for (var i = 0; i < standardLines.getCount(); i++) {
                     var currentAcc = standardLines.getLine(i).getAccountId();
@@ -1002,7 +1024,6 @@
 
                         if (Number(standardLines.getLine(i).getCreditAmount()) > 0) {
                             nlapiLogExecution("DEBUG", "getCreditAmount custrecord_sdb_cuenta_costo", Number(standardLines.getLine(i).getCreditAmount()));
-
                             var newLine = customLines.addNewLine();
                             newLine.setDebitAmount(Number(standardLines.getLine(i).getCreditAmount()));
                             newLine.setAccountId(parseInt(currentAcc));
@@ -1482,12 +1503,11 @@
         }
     }
 
-
+    //Logic for  Vendor Prepayment
     if (recordType == 'vendorprepayment') {
         try {
-            nlapiLogExecution("AUDIT", "recordType vendor ===", recordType);
             var currency = transactionRecord.getFieldText('currency');
-            var configData = nlapiLookupField('customrecord_sdb_rcd_conf_plugin', 1, ['custrecord_sdb_ant_vendor_acc','custrecord_sdb_is_3ros_acc', 'custrecord_sdb_adj_acc_puente', 'custrecordsdb_adj_a1', 'custrecord_sdb_inv_puente_acc', 'custrecord_sdb_inv_art_3ro', 'custrecord_sdb_inv_art_intercom', 'custrecord_sdb_inv_cos_intercom', 'custrecord_sdb_inv_gasto_3ro', 'custrecord_sdb_intercompany_acc_invoice', 'custrecord_sdb_cost_account', 'custrecord_sdb_cat_por_cobrar_inv', 'custrecord_sdb_inv_item_acc', 'custrecord_sdb_cuenta_costo', 'custrecord_sdb_inv_cost_ic', 'custrecord_sdb_art_account', 'custrecord_sdb_acc_expense', 'custrecord_sdb_inv_cost_3ro', 'custrecord_sdb_momento_vta_ci', 'custrecord_sdb_discount_puente', 'custrecord_sdb_discount_inter_acc', 'custrecord_sdb_discount_3ro_acc'])
+            var configData = nlapiLookupField('customrecord_sdb_rcd_conf_plugin', 1, ['custrecord_sdb_ant_vendor_acc', 'custrecord_sdb_is_3ros_acc', 'custrecord_sdb_adj_acc_puente', 'custrecordsdb_adj_a1', 'custrecord_sdb_inv_puente_acc', 'custrecord_sdb_inv_art_3ro', 'custrecord_sdb_inv_art_intercom', 'custrecord_sdb_inv_cos_intercom', 'custrecord_sdb_inv_gasto_3ro', 'custrecord_sdb_intercompany_acc_invoice', 'custrecord_sdb_cost_account', 'custrecord_sdb_cat_por_cobrar_inv', 'custrecord_sdb_inv_item_acc', 'custrecord_sdb_cuenta_costo', 'custrecord_sdb_inv_cost_ic', 'custrecord_sdb_art_account', 'custrecord_sdb_acc_expense', 'custrecord_sdb_inv_cost_3ro', 'custrecord_sdb_momento_vta_ci', 'custrecord_sdb_discount_puente', 'custrecord_sdb_discount_inter_acc', 'custrecord_sdb_discount_3ro_acc'])
 
             nlapiLogExecution("AUDIT", "currency ", currency);
             if (currency != 'UYU') return;
@@ -1520,7 +1540,7 @@
 
                 }
             }
-    
+
         } catch (e) {
             nlapiLogExecution("DEBUG", "ERROR vendorprepayment", e);
         }
@@ -1721,7 +1741,6 @@
             nlapiLogExecution("DEBUG", "getGlImpact inv", e);
         }
     }
-
 }
 
 
