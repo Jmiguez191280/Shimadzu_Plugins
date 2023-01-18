@@ -30,6 +30,8 @@
      }
      function afterSubmit(context) {
          var scriptObj = runtime.getCurrentScript();
+       log.debug('context.newRecord.getValue(status)', context.newRecord.getValue('status'));
+       
          if (context.type == context.UserEventType.DELETE) return;
          var itemIntalled = [];
          if (context.type == context.UserEventType.CREATE /*|| context.type == context.UserEventType.EDIT*/) {
