@@ -8,29 +8,27 @@
      function beforeLoad(context) {
          try {
              var rec = context.newRecord;
-             var status=rec.getValue('status');
+             var status = rec.getValue('status');
              var form_1 = context.form;
-            // var sublist = form_1.getSublist({
-            //     id: 'item'
-            // })
-          log.debug('status', status);
-           return
-           if(status != 'Shipped'){
-             var itemFieldDate = form_1.getSublist({id: 'item'})
-           itemFieldDate=itemFieldDate.getField({id: 'custcol_sdb_date_of_installation'});
-           itemFieldDate.updateDisplayType({
-                  displayType: serverWidget.FieldDisplayType.DISABLED
-              })
-           
-             var itemFieldCheck = form_1.getSublist({id: 'item'})
-           itemFieldCheck=itemFieldCheck.getField({id: 'custcol_sdb_installed'});
-           itemFieldCheck.updateDisplayType({
-                  displayType: serverWidget.FieldDisplayType.DISABLED
-              })
-           
-           
-           log.debug('itemFieldCheck', itemFieldCheck);
-        }
+             // var sublist = form_1.getSublist({
+             //     id: 'item'
+             // })
+             log.debug('status', status);
+             return
+             if (status != 'Shipped') {
+                 var itemFieldDate = form_1.getSublist({ id: 'item' })
+                 itemFieldDate = itemFieldDate.getField({ id: 'custcol_sdb_date_of_installation' });
+                 itemFieldDate.updateDisplayType({
+                     displayType: serverWidget.FieldDisplayType.DISABLED
+                 })
+
+                 var itemFieldCheck = form_1.getSublist({ id: 'item' })
+                 itemFieldCheck = itemFieldCheck.getField({ id: 'custcol_sdb_installed' });
+                 itemFieldCheck.updateDisplayType({
+                     displayType: serverWidget.FieldDisplayType.DISABLED
+                 })
+                 log.debug('itemFieldCheck', itemFieldCheck);
+             }
              // var subtextfield = sublist.addField({
              //     id: 'custpage_sdb_qty_to_installed',
              //     type: serverWidget.FieldType.INTEGER,
@@ -45,41 +43,50 @@
          }
      }
 
-
      function beforeSubmit(context) {
 
          try {
-             var rcdId = context.newRecord.id;
+             var rec = context.newRecord;
+             var rcdId = rec.id;
+             var createdFrom = rec.getValue('createdfrom')
              log.debug('context.type ', context.type);
              log.debug('rcdId ', rcdId);
              if (context.type == context.UserEventType.DELETE) {
-
+                 //deleteAssociatesRecords Borra custom record asociados
                  var rcdDelete = deleteAssociatesRecords(rcdId)
+                 if (!createdFrom) return;
+                 //Deschequear en la SO Installed false
+                 record.submitFields({
+                     type: record.Type.SALES_ORDER,
+                     id: createdFrom,
+                     values: {
+                         custbody_sdb_if_installed: false
+                     },
+                 })
+                 //Deschequear en la Invoice Installed false
+                 setInstalledFlag(createdFrom)
                  log.debug('rcdDelete =>', rcdDelete);
                  return;
              }
          } catch (e) {
              log.debug('beforeSubmit error', e);
          }
-         // dpe
-         // try {
-
-         // }catch(e){
-
-         // }
-
-
      }
 
      function afterSubmit(context) {
          var scriptObj = runtime.getCurrentScript();
          if (context.type == context.UserEventType.DELETE) return;
          var itemIntalled = [];
+         var allInstall = context.newRecord.getValue('custbody_sdb_install_all');
+         var dateInstalledBody = context.newRecord.getValue('custbody_sdb_installed_date');
+         var reportNumber = context.newRecord.getValue('custbody_sdb_report_number');
+         var comments = context.newRecord.getValue('custbody_sdb_message');
+         log.debug('allInstall', allInstall);
          if (context.type == context.UserEventType.CREATE /*|| context.type == context.UserEventType.EDIT*/) {
              try {
                  var data = {};
                  var thisRecord = record.load({
-                     type: search.Type.ITEM_FULFILLMENT,
+                     type: record.Type.ITEM_FULFILLMENT,
                      id: context.newRecord.id,
                      isDynamic: true
                  });
@@ -152,7 +159,7 @@
 
                          });
                          log.debug('itemType.type', itemType.type);
-                         log.debug('itemType.recordtype', itemType.recordtype);
+                         log.debug('itemType.recordtype==', itemType.recordtype);
                          if (itemType.type[0].value != 'InvtPart' || itemType.type[0].value == "OthCharge") continue;
                          var quantity = thisRecord.getCurrentSublistValue({
                              sublistId: 'item',
@@ -184,10 +191,10 @@
                              items.push({
                                  item: item,
                                  lotNumber: number,
-                                 qty: lotNumber.length,
+                                 qty: qty,//lotNumber.length,
                                  itemType: itemType.recordtype,
                                  line: i,
-                                 iinstalled: installed,
+                                 itemInstalled: installed,
                                  installedDate: installedDate,
                                  soId: createdFrom
                              })
@@ -227,7 +234,7 @@
                          // }
                      } catch (e) {
                          log.debug('afterSubmit error in for I', e);
-                     }validateFullInstalled
+                     }
                  }
 
                  objsReturn.items = itemsAdj;
@@ -241,7 +248,7 @@
                  if (objsReturn.items) createAdjustment(objsReturn);
                  var created = false;
                  if (items.length > 0 && createdFrom) /*updateSoLines(createdFrom, itemIntalled);*/ {
-                     created = createRecordInstalled(installInfo,itemFilter);
+                     created = createRecordInstalled(installInfo, itemFilter, reportNumber,);
                  }
                  //if (created) validateFullInstalled(context.newRecord.id, itemFilter);
              } catch (e) {
@@ -251,7 +258,7 @@
              try {
                  var data = {};
                  var thisRecord = record.load({
-                     type: search.Type.ITEM_FULFILLMENT,
+                     type: record.Type.ITEM_FULFILLMENT,
                      id: context.newRecord.id,
                      isDynamic: true
                  });
@@ -307,7 +314,7 @@
                              var itemType = search.lookupFields({
                                  type: 'item',
                                  id: item,
-                                 columns: ['type']
+                                 columns: ['type', 'recordtype']
                              })
 
                              var installed = thisRecord.getCurrentSublistValue({
@@ -342,7 +349,6 @@
                              } else if ((oldinstalled || oldinstalled == 'T') && (!installed || installed == 'F')) {
 
                                  log.debug('old=T,inst=F', thisRecord);
-
                                  itemsIdsRemoveInstal.push(item)
                                  objsRemove[item + '_' + i] = { line: i };
                                  var installedDate = thisRecord.setCurrentSublistValue({
@@ -350,8 +356,6 @@
                                      fieldId: 'custcol_sdb_date_of_installation',
                                      value: null
                                  });
-
-
 
                              }
 
@@ -376,7 +380,8 @@
                              //     line: i
                              // }));
 
-                             log.debug('itemType.type', itemType.type);
+                             log.debug('itemType.type', itemType.type[0].value);
+                             log.debug('itemType.type=', itemType.recordType)
                              //dpe
                              log.debug('itemType.recordtype', itemType.recordtype);
 
@@ -393,6 +398,7 @@
                              });
 
                              var irSubRecLineCount = irSubRecord.getLineCount('inventoryassignment');
+
                              for (var j = 0; j < irSubRecLineCount; j++) {
                                  irSubRecord.selectLine({
                                      sublistId: 'inventoryassignment',
@@ -427,12 +433,13 @@
                      }
 
                      installInfo.items = items;
+                     installInfo.saleOrder = createdFrom;
+
                      log.debug('installInfo', installInfo);
                      log.debug('itemsIds.length', itemsIds.length);
-                     if (items.length > 0 && createdFrom && oldStatus != 'Shipped')/*updateSoLines(createdFrom, itemIntalled);*/ createRecordInstalled(installInfo);
-                     if (itemsIds.length) setInstalled(itemsIds, thisRecord.id, objs, false);
-                     if (itemsIdsRemoveInstal.length) setInstalled(itemsIdsRemoveInstal, thisRecord.id, objsRemove, true);
-
+                     if (items.length > 0 && createdFrom && oldStatus != 'Shipped')/*updateSoLines(createdFrom, itemIntalled);*/ createRecordInstalled(installInfo, null, reportNumber, comments);
+                     if (itemsIds.length) setInstalled(itemsIds, thisRecord.id, objs, false, reportNumber);
+                     if (itemsIdsRemoveInstal.length) setInstalled(itemsIdsRemoveInstal, thisRecord.id, objsRemove, true, reportNumber, comments);
                  }
              } catch (e) {
                  log.debug('afterSubmit error install info', e);
@@ -440,14 +447,13 @@
          }
      }
 
-
-     function setInstalled(item, itemF, objs, flag) {
+     function setInstalled(item, itemF, objs, flag, reportNumber, comments) {
          try {
              log.debug('ON setInstalled', objs);
              log.debug('ON setInstalled item', item);
              log.debug('ON setInstalled flag', flag);
              if (flag) {
-                 var obj = { itemsIds: item, itemF: itemF, objs: objs }
+                 var obj = { itemsIds: item, itemF: itemF, objs: objs, reportNumber: reportNumber, comments: comments }
 
                  var scheduledScript = task.create({
                      taskType: task.TaskType.SCHEDULED_SCRIPT
@@ -462,7 +468,7 @@
 
                  log.debug('task id1', scheduledScript.submit())
              } else if (!flag) {
-                 var obj = { itemsIds: item, itemF: itemF, objs: objs }
+                 var obj = { itemsIds: item, itemF: itemF, objs: objs, reportNumber: reportNumber, comments: comments }
 
                  var scheduledScript = task.create({
                      taskType: task.TaskType.SCHEDULED_SCRIPT
@@ -474,16 +480,47 @@
                      'custscript_ss_data': obj,
                      'custscript_ss_rcdid': ''
                  };
-
                  log.debug('task id2', scheduledScript.submit())
              }
              return;
-
          } catch (e) {
              log.debug('setInstalled Error', e);
          }
      }
 
+     function setInstalledFlag(id) {
+
+         try {
+             var invoiceSearchObj = search.create({
+                 type: "invoice",
+                 filters:
+                     [
+                         ["type", "anyof", "CustInvc"],
+                         "AND",
+                         ["createdfrom", "anyof", id],
+                         "AND",
+                         ["mainline", "is", "T"]
+                     ],
+                 columns: []
+             });
+             var searchResultCount = invoiceSearchObj.runPaged().count;
+             log.debug("invoiceSearchObj result count", searchResultCount);
+             invoiceSearchObj.run().each(function (result) {
+                 record.submitFields({
+                     type: record.Type.INVOICE,
+                     id: result.id,
+                     values: {
+                         custbody_sdb_if_installed: false
+                     },
+                 })
+                 return true;
+             });
+
+         } catch (e) {
+             log.error('setInstalledFlag', e)
+         }
+
+     }
      function validateFullInstalled(id, itemFilter) {
          try {
              log.debug('itemF validateFullInstalled >>', id);
@@ -553,7 +590,6 @@
              log.error('error validateInstaledCount', e);
          }
      }
-
 
      function createAdjustment(data) {
          try {
@@ -654,31 +690,42 @@
          }
      }
 
-     function createRecordInstalled(objData,items) {
+     function createRecordInstalled(objData, items, reportNumber, comments) {
          try {
 
              if (!objData) return false;
              log.debug('objData', objData);
-             if (objData.items && objData.items.length) {
+             log.debug('reportNumber', reportNumber);
+             var serialitems = objData.items.filter((el) => el.itemType == 'serializedinventoryitem');
+             var inventItems = objData.items.filter((el) => el.itemType != 'serializedinventoryitem');
+             log.error('serialitems', serialitems);
+             log.error('inventItems', inventItems);
+             if (serialitems && serialitems.length) {// Crea los record individuales para que se pueda usar mejor para las instalaciones parciales y manejar las qtys
 
                  // log.debug('items', objData.items);
-
-                 var count = objData.items.length;
+                 var count = serialitems.length;
                  for (var x = 0; x < count; x++) {
-                     var thisObj = objData.items[x];
-
-                     // log.debug('instaled', objData.items[x].iinstalled)
-                     // log.debug('installed', thisObj.iinstalled)
-
+                     var thisObj = serialitems[x];
+                     // log.debug('instaled', objData.items[x].itemInstalled)
+                     // log.debug('installed', thisObj.itemInstalled)
                      var rcd = record.create({
                          type: 'customrecord_sdb_item_installed_rec',
                          isDynamic: true,
                      })
-
                      rcd.setValue({
                          fieldId: 'custrecord_sdb_date_rec',
                          value: new Date(),
                          ignoreFieldChange: true
+                     })
+
+                     rcd.setValue({
+                         fieldId: 'custrecord_sdb_report_number',
+                         value: reportNumber,
+                         ignoreFieldChange: true
+                     })
+                     rcd.setValue({
+                         fieldId: 'custrecord_sdb_comments',
+                         value: comments || '',
                      })
 
                      rcd.setValue({
@@ -694,25 +741,28 @@
                      })
 
                      rcd.setValue({
+                         fieldId: 'custrecord_sdb_sales_order_rec',
+                         value: objData.saleOrder,
+                         ignoreFieldChange: true
+                     })
+                     rcd.setValue({
                          fieldId: 'custrecord_sdb_item_rec',
                          value: thisObj.item,
                          ignoreFieldChange: true
                      })
                      log.debug('thisObj', thisObj);
-                     log.debug('thisObj.iinstalled', thisObj.itemInstalled);
-                     //dpe/////////////////////////////////////////////////////////
+                     // log.debug('thisObj.itemInstalled', thisObj.itemInstalled);
+
                      log.debug('item', thisObj.item);
                      var itemType = search.lookupFields({
                          type: 'item',
                          id: thisObj.item,
                          columns: ['type', 'recordtype']
                      })
-                     log.debug('itemType.type', itemType.type);
-                     log.debug('itemType.recordtype', itemType.recordtype);
 
                      // const isSerial = thisObj.itemType === 'serializedinventoryitem';
-                     const isSerial = itemType.recordtype === 'serializedinventoryitem';
-
+                     const isSerial = itemType.recordtype == 'serializedinventoryitem' || thisObj.itemType == 'serializedinventoryitem';
+                     log.debug('isSerial', isSerial);
                      if (isSerial) {
                          rcd.setValue({
                              fieldId: 'custrecord_sdb_serial_num_rec',
@@ -727,7 +777,7 @@
                      })
                      rcd.setValue({
                          fieldId: 'custrecord_sdb_qty_installed_rec',
-                         value: isSerial ? 1 : thisObj.qty,
+                         value: 1,
                          ignoreFieldChange: true
                      })
 
@@ -742,33 +792,24 @@
                          value: objData.accountId,
                          ignoreFieldChange: true
                      })
-                     // iinstalled:installed,
+                     // itemInstalled:installed,
                      // installedDate:installedDate,
                      // soId:createdFrom
-                     //  log.debug('objData.iinstalled', objData.iinstalled);
-                     //  log.debug('thisObj.iinstalled',thisObj.iinstalled);
-                     //  if (objData.iinstalled && objData.iinstalled == 'T') {
-                     // if (thisObj.iinstalled && thisObj.iinstalled == true || objData.iinstalled && objData.iinstalled == 'T'){
-                     //  log.debug('1', thisObj.iinstalled);
-                     //  log.debug('2', thisObj.iinstalled  === true);
-                     //  log.debug('3', objData.itemInstalled);
-                     //  log.debug('4', objData.itemInstalled === true); 
-                     //  log.debug('5', objData.items[x].itemInstalled);
-                     //  log.debug('5', objData.items[x].itemInstalled == true);
-                     //  log.debug('5', objData.items[x].itemInstalled === true);
-                     // log.debug('itemInstalled', objData.itemInstalled);
+                     //  log.debug('objData.itemInstalled', objData.itemInstalled);
+                     //  log.debug('thisObj.itemInstalled',thisObj.itemInstalled);
+                     //  if (objData.itemInstalled && objData.itemInstalled == 'T') {
+                     // if (thisObj.itemInstalled && thisObj.itemInstalled == true || objData.itemInstalled && objData.itemInstalled == 'T'){
+
                      var installedFlag = false;
-                     if (thisObj.iinstalled && thisObj.iinstalled == true || objData.items[x].itemInstalled && objData.items[x].itemInstalled == true) {
+                     if (thisObj.itemInstalled && thisObj.itemInstalled == true /*|| objData.items[x].itemInstalled && objData.items[x].itemInstalled == true*/) {
                          installedFlag = true;
-                         log.debug('installed settings', 'on')
+                         log.audit('installed settings serial', 'on')
 
                          // rcd.setValue({
                          //     fieldId: 'custrecord_sdb_installed_rec',
                          //     value: true
-                         // })
+                         // }
 
-
-                         //dpe
                          if (!thisObj.installedDate || thisObj.installedDate == null) {
                              log.debug('objData.installedDate1', thisObj.installedDate)
                              rcd.setValue({
@@ -793,7 +834,6 @@
                                  ignoreFieldChange: true
                              })
                          }
-
                          rcd.setValue({
                              fieldId: 'custrecord_sdb_sales_order_rec',
                              value: thisObj.soId,
@@ -801,35 +841,193 @@
                          })
                      }
                      var custRec = rcd.save()
-                     log.debug('custRec>>>', custRec);
+                     log.debug('custRec Serial', custRec);
                      if (installedFlag && custRec) {
                          var scheduledScript = task.create({
                              taskType: task.TaskType.SCHEDULED_SCRIPT
                          });
                          scheduledScript.scriptId = 'customscript_sdb_set_cus_rec_instalacion';
                          scheduledScript.deploymentId = null;
-                         scheduledScript.params = {                 
+                         scheduledScript.params = {
                              'custscript_ss_rcdid': custRec,
                              'custscript_ss_items': items
                          };
 
-                         log.debug('item',items);
+                         log.debug('item', items);
+                         log.audit('task set cust rec serial', scheduledScript.submit())
 
-                         log.debug('task set cust rec', scheduledScript.submit())
+                     }
 
+                 }
+             }
+
+             if (inventItems && inventItems.length) {// Crea los record individuales para que se pueda usar mejor para las instalaciones parciales y manejar las qtys
+
+                 for (var t = 0; t < inventItems.length; t++) {
+                     var count = Number(inventItems[t].qty);
+                     var thisObj = inventItems[t];
+                     log.error('inventItems[t]', inventItems[t]);
+                     log.error('count inventItems', count);
+                     for (var i = 0; i < count; i++) {
+                         // log.debug('instaled', objData.items[x].itemInstalled)
+                         // log.debug('installed', thisObj.itemInstalled)
+                         var rcd = record.create({
+                             type: 'customrecord_sdb_item_installed_rec',
+                             isDynamic: true,
+                         })
+                         rcd.setValue({
+                             fieldId: 'custrecord_sdb_date_rec',
+                             value: new Date(),
+                             ignoreFieldChange: true
+                         })
+
+                         rcd.setValue({
+                             fieldId: 'custrecord_sdb_sales_order_rec',
+                             value: objData.saleOrder,
+                             ignoreFieldChange: true
+                         })
+
+                         rcd.setValue({
+                             fieldId: 'custrecord_sdb_report_number',
+                             value: reportNumber,
+                             ignoreFieldChange: true
+                         })
+                         rcd.setValue({
+                             fieldId: 'custrecord_sdb_comments',
+                             value: comments || '',
+                         })
+                         rcd.setValue({
+                             fieldId: 'custrecord_sdb_item_fulfillment_rec',
+                             value: objData.fulfill,
+                             ignoreFieldChange: true
+                         })
+
+                         rcd.setValue({
+                             fieldId: 'custrecord_sdb_line_number_rec',
+                             value: thisObj.line,
+                             ignoreFieldChange: true
+                         })
+
+                         rcd.setValue({
+                             fieldId: 'custrecord_sdb_item_rec',
+                             value: thisObj.item,
+                             ignoreFieldChange: true
+                         })
+                         log.debug('thisObj', thisObj);
+                         log.debug('thisObj.itemInstalled', thisObj.itemInstalled);
+                         //dpe/////////////////////////////////////////////////////////
+                         log.debug('item', thisObj.item);
+                         var itemType = search.lookupFields({
+                             type: 'item',
+                             id: thisObj.item,
+                             columns: ['type', 'recordtype']
+                         })
+                         log.debug('itemType.type', itemType.type);
+                         log.debug('itemType.recordtype', itemType.recordtype)
+
+                         rcd.setValue({
+                             fieldId: 'custrecord_sdb_subsidiary_rec',
+                             value: objData.subsidiary,
+                             ignoreFieldChange: true
+                         })
+                         rcd.setValue({
+                             fieldId: 'custrecord_sdb_qty_installed_rec',
+                             value: 1,
+                             ignoreFieldChange: true
+                         })
+
+                         rcd.setValue({
+                             fieldId: 'custrecord_sdb_location_rec',
+                             value: objData.locationIAC,
+                             ignoreFieldChange: true
+                         })
+
+                         rcd.setValue({
+                             fieldId: 'custrecord_sdb_account_rec',
+                             value: objData.accountId,
+                             ignoreFieldChange: true
+                         })
+                         // itemInstalled:installed,
+                         // installedDate:installedDate,
+                         // soId:createdFrom
+                         //  log.debug('objData.itemInstalled', objData.itemInstalled);
+                         //  log.debug('thisObj.itemInstalled',thisObj.itemInstalled);
+                         //  if (objData.itemInstalled && objData.itemInstalled == 'T') {
+                         // if (thisObj.itemInstalled && thisObj.itemInstalled == true || objData.itemInstalled && objData.itemInstalled == 'T'){
+
+                         var installedFlag = false;
+                         if (thisObj.itemInstalled && thisObj.itemInstalled == true /*|| objData.items[x].itemInstalled && objData.items[x].itemInstalled == true*/) {
+                             installedFlag = true;
+                             log.audit('installed settings invent', 'on')
+
+                             // rcd.setValue({
+                             //     fieldId: 'custrecord_sdb_installed_rec',
+                             //     value: true
+                             // })
+                             //dpe
+                             if (!thisObj.installedDate || thisObj.installedDate == null) {
+                                 log.debug('objData.installedDate1', thisObj.installedDate)
+                                 rcd.setValue({
+                                     fieldId: 'custrecord_sdb_instaltion_date_rec',
+                                     value: new Date(),
+                                     ignoreFieldChange: true
+                                 })
+
+                             } else {
+                                 log.debug('objData.installedDate2', objData.installedDate)
+
+                                 var newdate = new Date(thisObj.installedDate)
+                                 var date = format.parse({
+                                     value: newdate,
+                                     type: format.Type.DATE,
+                                 });
+                                 log.debug('date', date);
+
+                                 rcd.setValue({
+                                     fieldId: 'custrecord_sdb_instaltion_date_rec',
+                                     value: date,
+                                     ignoreFieldChange: true
+                                 })
+                             }
+
+                             rcd.setValue({
+                                 fieldId: 'custrecord_sdb_sales_order_rec',
+                                 value: thisObj.soId,
+                                 ignoreFieldChange: true
+                             })
+                         }
+                         var custRec = rcd.save()
+                         log.debug('custRec Inventory', custRec);
+                         if (installedFlag && custRec) {
+                             var scheduledScript = task.create({
+                                 taskType: task.TaskType.SCHEDULED_SCRIPT
+                             });
+                             scheduledScript.scriptId = 'customscript_sdb_set_cus_rec_instalacion';
+                             scheduledScript.deploymentId = null;
+                             scheduledScript.params = {
+                                 'custscript_ss_rcdid': custRec,
+                                 'custscript_ss_items': items
+                             };
+
+                             log.debug('item', items);
+
+                             log.audit('task set cust rec inventario', scheduledScript.submit())
+                         }
                      }
                  }
              }
              return true
          } catch (e) {
-             record.submitFields({
-                 type: 'customrecord_sdb_item_installed_rec',
-                 id: custRec,
-                 values: {
-                     custrecord_sdb_ir_errormessage: e
-                 }
+             if (custRec) {
+                 record.submitFields({
+                     type: 'customrecord_sdb_item_installed_rec',
+                     id: custRec,
+                     values: {
+                         custrecord_sdb_ir_errormessage: e
+                     }
 
-             })
+                 })
+             }
              log.debug('error createRecordInstalled', e);
          }
      }
@@ -853,7 +1051,7 @@
              log.debug("inventoryadjustmentSearchObj result count", searchResultCount);
              inventoryadjustmentSearchObj.run().each(function (result) {
                  record.delete({
-                     type: 'inventoryadjustment',
+                     type: record.Type.INVENTORY_ADJUSTMENT,
                      id: result.id
                  })
                  return true;

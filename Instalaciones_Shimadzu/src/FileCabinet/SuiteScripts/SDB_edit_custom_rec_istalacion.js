@@ -8,19 +8,15 @@
     function (record, runtime, search, format) {
         function execute(context) {
             try {
-   
+
                 var rcdid = runtime.getCurrentScript().getParameter('custscript_ss_rcdid');
                 var items = runtime.getCurrentScript().getParameter('custscript_ss_items');
-   
-               log.debug('itemsType',typeof items);
+
                
-               if(items){ items = JSON.parse(items); }
-   
-               log.debug('itemsType',typeof items);
-               
+                if (items) { items = JSON.parse(items); }
+                log.debug('itemsType', typeof items);
                 log.debug("data", rcdid);
                 if (!rcdid) return
-   
                 var rcdNew = record.load({
                     type: 'customrecord_sdb_item_installed_rec',
                     id: rcdid,
@@ -29,17 +25,17 @@
                 var IFid = rcdNew.getValue({
                     fieldId: 'custrecord_sdb_item_fulfillment_rec',
                 })
-   
+
                 rcdNew.setValue({
                     fieldId: 'custrecord_sdb_installed_rec',
                     value: true,
                     ignoreFieldChange: true
                 })
                 var id = rcdNew.save();
-   
+
                 log.debug('id', id);
-            if(id) validateFullInstalled(IFid, items)
-   
+                if (id) validateFullInstalled(IFid, items)
+
             } catch (e) {
                 record.submitFields({
                     type: 'customrecord_sdb_item_installed_rec',
@@ -47,12 +43,11 @@
                     values: {
                         custrecord_sdb_ir_errormessage: e
                     }
-   
                 })
                 log.debug('execute exception', e);
             }
         }
-   
+
         function validateFullInstalled(id, itemFilter) {
             try {
                 log.debug('itemF validateFullInstalled >>', id);
@@ -72,18 +67,16 @@
                 var searchResultCount = customrecord_sdb_item_installedSearchObj.runPaged().count;
                 log.debug("customrecord_sdb_item_installedSearchObj  count", searchResultCount);
                 customrecord_sdb_item_installedSearchObj.run().each(function (result) {
-                    log.debug('result.getValue(custrecord_sdb_installed_rec)', result.getValue('custrecord_sdb_installed_rec'));
+                   //log.debug('result.getValue(custrecord_sdb_installed_rec)', result.getValue('custrecord_sdb_installed_rec'));
                     if (!result.getValue('custrecord_sdb_installed_rec') || result.getValue('custrecord_sdb_installed_rec') == 'F') {
                         fullInstalled = false;
                         log.debug('installed <<>>', false);
                         return false;
-   
                     }
                     return true;
                 });
-   
+
                 //if (searchResultCount == installed_true.length) fullInstalled = true;
-   
                 if (fullInstalled) {
                     record.submitFields({
                         type: record.Type.ITEM_FULFILLMENT,
@@ -91,21 +84,15 @@
                         values: {
                             custbody_sdb_if_installed: true
                         }
-   
                     })
                     var createdFrom = search.lookupFields({
                         type: record.Type.ITEM_FULFILLMENT,
                         id: id,
                         columns: ['createdfrom', 'memo']
                     })
-   
-   
-   
+
                     var inv = getInvoice(itemFilter, createdFrom.createdfrom[0].value);
                     var comment = createdFrom.memo;
-   
-   
-   
                     record.submitFields({
                         type: record.Type.INVOICE,
                         id: inv,
@@ -114,7 +101,6 @@
                             custbody_sdb__service_report_number: id,
                             custbody_sdb_comments: comment
                         }
-   
                     })
                     record.submitFields({
                         type: record.Type.SALES_ORDER,
@@ -122,14 +108,13 @@
                         values: {
                             custbody_sdb_if_installed: true
                         }
-   
                     })
                 }
             } catch (e) {
                 log.error('error validateInstaledCount', e);
             }
         }
-   
+
         function getInvoice(itemId, createdFrom) {
             try {
                 var invoiceId;
@@ -137,7 +122,7 @@
                     type: "invoice",
                     filters:
                         [
-                            ["type", "anyof", "CustInvc"], 
+                            ["type", "anyof", "CustInvc"],
                             "AND",
                             ["item", "anyof", itemId],
                             "AND",
@@ -147,9 +132,6 @@
                 });
                 var searchResultCount = invoiceSearchObj.runPaged().count;
                 log.debug("invoiceSearchObj result count", searchResultCount);
-   
-   
-   
                 var myResultSet = invoiceSearchObj.run();
                 var resultRange = myResultSet.getRange({
                     start: 0,
@@ -161,10 +143,9 @@
                 log.debug('error getInvoice', e);
             }
         }
-   
+
         return {
             execute: execute
         };
     }
-   );
-   
+);

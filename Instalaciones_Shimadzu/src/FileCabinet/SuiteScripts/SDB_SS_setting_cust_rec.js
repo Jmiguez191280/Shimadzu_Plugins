@@ -35,6 +35,7 @@
              if (dataDelete) data = JSON.parse(dataDelete);
              if (!data.itemF) return
              var obj = data.objs
+             var reportNumber = data.reportNumber;
              var customrecord_sdb_item_installedSearchObj = search.create({
                  type: "customrecord_sdb_item_installed_rec",
                  filters:
@@ -45,7 +46,8 @@
                      ],
                  columns: [
                      search.createColumn({ name: "custrecord_sdb_line_number_rec", label: "Item line" }),
-                     search.createColumn({ name: "custrecord_sdb_item_rec", label: "Item" })
+                     search.createColumn({ name: "custrecord_sdb_item_rec", label: "Item" }),
+                     search.createColumn({ name: "custrecord_sdb_inv_adj_installed_rec", label: "Adjustment" })
                  ]
              });
              var searchResultCount = customrecord_sdb_item_installedSearchObj.runPaged().count;
@@ -55,16 +57,31 @@
 
              customrecord_sdb_item_installedSearchObj.run().each(function (result) {
                  var obj = data.objs[result.getValue('custrecord_sdb_item_rec') + '_' + result.getValue('custrecord_sdb_line_number_rec')];
-                 log.debug("result.getValue('custrecord_sdb_item_rec'", result.getValue('custrecord_sdb_item_rec'));
-                 log.debug("result.getValue('custrecord_sdb_line_number_rec'", result.getValue('custrecord_sdb_line_number_rec'));
-
+                 // log.debug("result.getValue('custrecord_sdb_item_rec'", result.getValue('custrecord_sdb_item_rec'));
+                 // log.debug("result.getValue('custrecord_sdb_line_number_rec'", result.getValue('custrecord_sdb_line_number_rec'));
                  // var newdate = new Date(obj.date);    
                  // log.debug('obj.date',obj.date);      empty
                  if (dataDelete) {
-                     record.delete({
+                     log.debug('On deleted', result.id);
+                     log.debug('On deleted', result.getValue('custrecord_sdb_inv_adj_installed_rec'));
+                     if (result.getValue('custrecord_sdb_inv_adj_installed_rec')) {
+                         record.delete({
+                             type: record.Type.INVENTORY_ADJUSTMENT,
+                             id: result.getValue('custrecord_sdb_inv_adj_installed_rec')
+                         })
+                     }
+
+                     record.submitFields({
                          type: 'customrecord_sdb_item_installed_rec',
-                         id: result.id
+                         id: result.id,
+                         values: {
+                             custrecord_sdb_installed_rec: false,
+                             custrecord_sdb_instaltion_date_rec: '',
+                             custrecord_sdb_sales_order_rec: '',
+                             //custrecord_sdb_report_number: reportNumber
+                         }
                      })
+
                  } else if (data) {
                      var rec = record.load({
                          type: 'customrecord_sdb_item_installed_rec',
@@ -82,6 +99,14 @@
                          rec.setValue({
                              fieldId: 'custrecord_sdb_instaltion_date_rec',
                              value: date,
+                         })
+                         rec.setValue({
+                             fieldId: 'custrecord_sdb_report_number',
+                             value: obj.reportNumber,
+                         })
+                         rec.setValue({
+                             fieldId: 'custrecord_sdb_comments',
+                             value: obj.comments || '',
                          })
                      } else {
                          var date = new Date();
@@ -101,20 +126,15 @@
                          fieldId: 'custrecord_sdb_installed_rec',
                          value: true,
                      })
-                     log.debug(' rec.save();',
-                         rec.save({
-                             enableSourcing: true,
-                             ignoreMandatoryFields: true
-                         }));
+
+                     var custRec = rec.save({
+                         enableSourcing: true,
+                         ignoreMandatoryFields: true
+                     });
+                     log.debug(' rec.save();', custRec)
+
                  }
-                 // record.submitFields({
-                 //     type: 'customrecord_sdb_item_installed',
-                 //     id: result.id,
-                 //     values: {
-                 //         custrecord_sdb_installed: true,
-                 //         custrecord_sdb_instaltion_date: date 
-                 //     },
-                 // })
+
                  return true;
              });
              var itemF = search.lookupFields({
@@ -124,7 +144,15 @@
              })
              if (!itemF.custbody_sdb_if_installed) validateFullInstalled(itemF, data.itemsIds);
          } catch (e) {
-             log.debug('execute exception', e);
+
+             log.error('execute exception', e);
+             record.submitFields({
+                 type: 'customrecord_sdb_item_installed_rec',
+                 id: custRec,
+                 values: {
+                     custrecord_sdb_ir_errormessage: e
+                 }
+             })
          }
      }
 
@@ -157,7 +185,6 @@
              });
 
              //if (searchResultCount == installed_true.length) fullInstalled = true;
-
              if (fullInstalled) {
                  record.submitFields({
                      type: record.Type.ITEM_FULFILLMENT,
