@@ -88,11 +88,11 @@
                     var createdFrom = search.lookupFields({
                         type: record.Type.ITEM_FULFILLMENT,
                         id: id,
-                        columns: ['createdfrom', 'memo']
+                        columns: ['createdfrom', 'custbody_sdb_message']
                     })
 
                     var inv = getInvoice(itemFilter, createdFrom.createdfrom[0].value);
-                    var comment = createdFrom.memo;
+                    var comment = createdFrom.custbody_sdb_message;
                     record.submitFields({
                         type: record.Type.INVOICE,
                         id: inv,

@@ -2,7 +2,7 @@
  * - PlugIn Implementation - 
  */
 
- function customizeGlImpact(transactionRecord, standardLines, customLines, book) {
+function customizeGlImpact(transactionRecord, standardLines, customLines, book) {
 
     if (standardLines.getCount() == 0) return;
     var recordType = transactionRecord.getRecordType();
@@ -30,7 +30,7 @@
                 if (customrecord_sdb_item_installed_recSearch) installed = true;
             }
             nlapiLogExecution("AUDIT", "inventoryadjustment installed ", installed);
-            var configData = nlapiLookupField('customrecord_sdb_rcd_conf_plugin', 1, ['custrecord_sdb_intercompany_if','custrecord_sdb_inv_cost_3ro', 'custrecord_sdb_inv_cost_ic', 'custrecord_sdb_momento_vta_ci', 'custrecord_sdb_inv_art_intercom', 'custrecord_sdb_inv_art_3ro', 'custrecord_sdb_adj_acc_puente', 'custrecord_sdb_adj_tr1_tr2', 'custrecord_sdb_adj_j1', 'custrecord_sdb_adj_ds', 'custrecord_sdb_adj_iac', 'custrecordsdb_adj_a1', 'custrecord_sdb_discount_puente', 'custrecord_sdb_discount_inter_acc', 'custrecord_sdb_discount_3ro_acc'])
+            var configData = nlapiLookupField('customrecord_sdb_rcd_conf_plugin', 1, ['custrecord_sdb_intercompany_if', 'custrecord_sdb_inv_cost_3ro', 'custrecord_sdb_inv_cost_ic', 'custrecord_sdb_momento_vta_ci', 'custrecord_sdb_inv_art_intercom', 'custrecord_sdb_inv_art_3ro', 'custrecord_sdb_adj_acc_puente', 'custrecord_sdb_adj_tr1_tr2', 'custrecord_sdb_adj_j1', 'custrecord_sdb_adj_ds', 'custrecord_sdb_adj_iac', 'custrecordsdb_adj_a1', 'custrecord_sdb_discount_puente', 'custrecord_sdb_discount_inter_acc', 'custrecord_sdb_discount_3ro_acc'])
             nlapiLogExecution("AUDIT", "standardLines.getCount() ", standardLines.getCount());
             var iter_3ro_acc = [configData.custrecord_sdb_inv_art_intercom, configData.custrecord_sdb_inv_art_3ro];
             var accCost = [configData.custrecord_sdb_inv_cost_ic, configData.custrecord_sdb_inv_cost_3ro, configData.custrecord_sdb_cuenta_costo]
@@ -42,8 +42,8 @@
                 var invoice;
                 var items = itemListIf(itemFulFill, 'itemfulfillment')
                 if (items) invoice = getShipDate(items, fulfillData.createdfrom)
-                nlapiLogExecution("ERROR", "ifulfillData.createdfrom ", fulfillData.createdfrom);
-                nlapiLogExecution("ERROR", "invoice ", invoice.id);
+                nlapiLogExecution("DEBUG", "ifulfillData.createdfrom ", fulfillData.createdfrom);
+                nlapiLogExecution("DEBUG", "invoice ", invoice.id);
                 var validateDare = fulfillData.trandate == invoice.date;
                 var invoice_Gl = getGlImpact('invoice', invoice.id);
                 var fulfill_Gl = getGlImpact('itemfulfillment', itemFulFill);
@@ -103,7 +103,7 @@
                         if (currentLocation) newLine.setLocationId(parseInt(currentLocation));
                         newLine.setAccountId(parseInt(currentAcc));
 
-                      
+
 
                         //var fulfill_Gl = fiterInvData(fulfill_Gl, configData.custrecord_sdb_adj_iac, null);
                         // var filterInv = fiterInvData(invoice_Gl, configData.custrecord_sdb_inv_art_intercom, configData.custrecord_sdb_inv_art_3ro);
@@ -310,7 +310,7 @@
                             // if (currentLocation) newLine.setLocationId(parseInt(currentLocation));
                             // newLine.setAccountId(parseInt(configData.custrecord_sdb_intercompany_if));
 
-                             var newLine = customLines.addNewLine();
+                            var newLine = customLines.addNewLine();
                             newLine.setDebitAmount(fulfill_Gl[t].debit);
                             if (fulfill_Gl[t].memo) newLine.setMemo(fulfill_Gl[t].memo)
                             if (fulfill_Gl[t].class) newLine.setClassId(parseInt(fulfill_Gl[t].class));
@@ -492,7 +492,7 @@
             }
 
         } catch (er) {
-            nlapiLogExecution("AUDIT", "ERROR " + recordType, er);
+            nlapiLogExecution("ERROR", "ERROR " + recordType, er);
         }
     }
 
@@ -858,62 +858,63 @@
 
                 for (var i = 0; i < standardLines.getCount(); i++) {
                     var currentAcc = standardLines.getLine(i).getAccountId();
+
                     if (!currentAcc) continue;
                     var accType = nlapiLookupField('account', currentAcc, 'type');
                     var currentLocation = standardLines.getLine(i).getLocationId();
-                    if (!currentLocation) continue;
                     var entity = standardLines.getLine(i).getEntityId();
                     // if (i > 0) {
-
-                    if (Number(standardLines.getLine(i).getCreditAmount()) > 0 && currentAcc == ctaPuenteInv) {// Si la cuenta es puente ("41799 Sales : Sales, (Interim)) se balancea y se setea nueva linea con cuenta descuento (intercompany o terceros)
+                    //Por el momento con esta condicion solo se balancea la invoice
+                    if (Number(standardLines.getLine(i).getCreditAmount()) > 0 /*&& currentAcc == ctaPuenteInv*/) {// Si la cuenta es puente ("41799 Sales : Sales, (Interim)) se balancea y se setea nueva linea con cuenta descuento (intercompany o terceros)
                         nlapiLogExecution("DEBUG", "if 1 >>", instalacion);
+                        nlapiLogExecution("DEBUG", "currentAcc if 1 >>", currentAcc);
                         var newLine = customLines.addNewLine();
                         newLine.setDebitAmount(Number(standardLines.getLine(i).getCreditAmount()));
-                        newLine.setAccountId(parseInt(currentAcc));
-                        newLine.setLocationId(parseInt(currentLocation));
+                        if (currentLocation) newLine.setLocationId(parseInt(currentLocation));
                         if (standardLines.getLine(i).getMemo()) newLine.setMemo(standardLines.getLine(i).getMemo())
                         if (standardLines.getLine(i).getClassId()) newLine.setClassId(standardLines.getLine(i).getClassId());
                         if (standardLines.getLine(i).getDepartmentId()) newLine.setDepartmentId(standardLines.getLine(i).getDepartmentId());
                         if (entity && accType != 'AcctRec') newLine.setEntityId(parseInt(entity))
                         if (standardLines.getLine(i).getSegmentValueId('cseg1')) newLine.setSegmentValueId('cseg1', standardLines.getLine(i).getSegmentValueId('cseg1'));
+                        newLine.setAccountId(parseInt(currentAcc));
 
-                        // var newLine = customLines.addNewLine();
-                        // newLine.setCreditAmount(Number(standardLines.getLine(i).getCreditAmount()));
-                        // newLine.setLocationId(parseInt(currentLocation));
-                        // if (standardLines.getLine(i).getMemo()) newLine.setMemo(standardLines.getLine(i).getMemo())
-                        // if (standardLines.getLine(i).getClassId()) newLine.setClassId(standardLines.getLine(i).getClassId());
-                        // if (standardLines.getLine(i).getDepartmentId()) newLine.setDepartmentId(standardLines.getLine(i).getDepartmentId());
-                        // if (entity && accType != 'AcctRec') newLine.setEntityId(parseInt(entity))
-                        // if (standardLines.getLine(i).getSegmentValueId('cseg1')) newLine.setSegmentValueId('cseg1', standardLines.getLine(i).getSegmentValueId('cseg1'));
-                        // newLine.setAccountId(parseInt(venta_instalacion));
-                        // if (isInterCompany != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_discount_inter_acc));
-                        // if (terceros != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_discount_3ro_acc));
+                        /*  var newLine = customLines.addNewLine();
+                          newLine.setCreditAmount(Number(standardLines.getLine(i).getCreditAmount()));
+                          newLine.setLocationId(parseInt(currentLocation));
+                          if (standardLines.getLine(i).getMemo()) newLine.setMemo(standardLines.getLine(i).getMemo())
+                          if (standardLines.getLine(i).getClassId()) newLine.setClassId(standardLines.getLine(i).getClassId());
+                          if (standardLines.getLine(i).getDepartmentId()) newLine.setDepartmentId(standardLines.getLine(i).getDepartmentId());
+                          if (entity && accType != 'AcctRec') newLine.setEntityId(parseInt(entity))
+                          if (standardLines.getLine(i).getSegmentValueId('cseg1')) newLine.setSegmentValueId('cseg1', standardLines.getLine(i).getSegmentValueId('cseg1'));
+                          newLine.setAccountId(parseInt(venta_instalacion));*/
+                        //if (isInterCompany != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_discount_inter_acc));
+                        //if (terceros != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_discount_3ro_acc));
 
                     } else if (Number(standardLines.getLine(i).getDebitAmount()) > 0) {
                         nlapiLogExecution("DEBUG", "if 2 >>", instalacion);
                         var newLine = customLines.addNewLine();
                         newLine.setCreditAmount(Number(standardLines.getLine(i).getDebitAmount()));
-                        newLine.setAccountId(parseInt(currentAcc));
-                        newLine.setLocationId(parseInt(currentLocation));
+                        if (currentLocation) newLine.setLocationId(parseInt(currentLocation));
                         if (standardLines.getLine(i).getMemo()) newLine.setMemo(standardLines.getLine(i).getMemo())
                         if (standardLines.getLine(i).getClassId()) newLine.setClassId(standardLines.getLine(i).getClassId());
                         if (standardLines.getLine(i).getDepartmentId()) newLine.setDepartmentId(standardLines.getLine(i).getDepartmentId());
                         if (entity && accType != 'AcctRec') newLine.setEntityId(parseInt(entity))
                         if (standardLines.getLine(i).getSegmentValueId('cseg1')) newLine.setSegmentValueId('cseg1', standardLines.getLine(i).getSegmentValueId('cseg1'));
+                        newLine.setAccountId(parseInt(currentAcc));
 
-                        // var newLine = customLines.addNewLine();
-                        // newLine.setCreditAmount(Number(standardLines.getLine(i).getDebitAmount()));
-                        // newLine.setLocationId(parseInt(currentLocation));
-                        // if (standardLines.getLine(i).getMemo()) newLine.setMemo(standardLines.getLine(i).getMemo())
-                        // if (standardLines.getLine(i).getClassId()) newLine.setClassId(standardLines.getLine(i).getClassId());
-                        // if (standardLines.getLine(i).getDepartmentId()) newLine.setDepartmentId(standardLines.getLine(i).getDepartmentId());
-                        // if (entity && accType != 'AcctRec') newLine.setEntityId(parseInt(entity))
-                        // if (standardLines.getLine(i).getSegmentValueId('cseg1')) newLine.setSegmentValueId('cseg1', standardLines.getLine(i).getSegmentValueId('cseg1'));
-                        // newLine.setAccountId(parseInt(venta_instalacion));
+                        /*   var newLine = customLines.addNewLine();
+                           newLine.setCreditAmount(Number(standardLines.getLine(i).getDebitAmount()));
+                           newLine.setLocationId(parseInt(currentLocation));
+                           if (standardLines.getLine(i).getMemo()) newLine.setMemo(standardLines.getLine(i).getMemo())
+                           if (standardLines.getLine(i).getClassId()) newLine.setClassId(standardLines.getLine(i).getClassId());
+                           if (standardLines.getLine(i).getDepartmentId()) newLine.setDepartmentId(standardLines.getLine(i).getDepartmentId());
+                           if (entity && accType != 'AcctRec') newLine.setEntityId(parseInt(entity))
+                           if (standardLines.getLine(i).getSegmentValueId('cseg1')) newLine.setSegmentValueId('cseg1', standardLines.getLine(i).getSegmentValueId('cseg1'));
+                           newLine.setAccountId(parseInt(venta_instalacion)); */
                         // if (isInterCompany != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_discount_inter_acc));
                         // if (terceros != -1) newLine.setAccountId(parseInt(configData.custrecord_sdb_discount_3ro_acc));
                     }
-                    //}
+                    // }
                 }
             } else if (instalacion == 'T' && installed == 'F' && diff) {// Verificar si esto de que necesite instalacion y no este instalada || !diff falsa
 
@@ -1008,7 +1009,7 @@
                 }
             }
         } catch (e) {
-            nlapiLogExecution("DEBUG", "ERROR invoice", e);
+            nlapiLogExecution("ERROR", "ERROR invoice", e);
         }
     }
     //Credit Memo Logic
@@ -1234,7 +1235,7 @@
                 }
             }
         } catch (e) {
-            nlapiLogExecution("DEBUG", "ERROR creditmemo", e);
+            nlapiLogExecution("ERROR", "ERROR creditmemo", e);
         }
     }
     //Logic for Item Fulfillment
@@ -1351,7 +1352,7 @@
                         if (standardLines.getLine(i).getSegmentValueId('cseg1')) newLine.setSegmentValueId('cseg1', standardLines.getLine(i).getSegmentValueId('cseg1'));
                         newLine.setLocationId(parseInt(configData.custrecord_sdb_iac_location));
                         newLine.setAccountId(parseInt(configData.custrecord_sdb_adj_iac));
-                        
+
                     } else if (Number(standardLines.getLine(i).getDebitAmount()) > 0 && configData.custrecord_sdb_cuenta_costo == currentAcc) {
                         nlapiLogExecution("AUDIT", "costo else IF istalled ", configData.custrecord_sdb_cuenta_costo);
                         //Prueba S/ insatll y agrego debajo lo instalado ======
@@ -2332,7 +2333,7 @@
             // }
 
         } catch (e) {
-            nlapiLogExecution("DEBUG", "ERROR itemfulfillment", e);
+            nlapiLogExecution("ERROR", "ERROR itemfulfillment", e);
         }
     }
 
@@ -2375,7 +2376,7 @@
             }
 
         } catch (e) {
-            nlapiLogExecution("DEBUG", "ERROR vendorprepayment", e);
+            nlapiLogExecution("ERROR", "ERROR vendorprepayment", e);
         }
     }
 
@@ -2397,7 +2398,7 @@
             var impact = false;
             //  if (invoiceSearch) impact = itemValuesList(invoiceSearch[0].id, 'invoice', false);
         } catch (e) {
-            nlapiLogExecution("DEBUG", "getInvoice", getInvoice);
+            nlapiLogExecution("ERROR", "getInvoice", getInvoice);
         }
         return impact
     }
@@ -2437,7 +2438,7 @@
                 nlapiLogExecution("AUDIT", "Saved SO", id);
             }
         } catch (e) {
-            nlapiLogExecution("DEBUG", "ERROR in  itemValuesList", e);
+            nlapiLogExecution("ERROR", "ERROR in  itemValuesList", e);
         }
         nlapiLogExecution("DEBUG", "installed itemValuesList", installed);
         return installed
@@ -2462,7 +2463,7 @@
             }
 
         } catch (e) {
-            nlapiLogExecution("DEBUG", "ERROR in  itemListIf", e);
+            nlapiLogExecution("ERROR", "ERROR in  itemListIf", e);
         }
         return arrItems
     }
@@ -2523,7 +2524,7 @@
             }
             return obj
         } catch (e) {
-            nlapiLogExecution("DEBUG", "getShipDate", e);
+            nlapiLogExecution("ERROR", "getShipDate", e);
         }
     }
 
@@ -2534,7 +2535,7 @@
             });
 
         } catch (e) {
-            nlapiLogExecution("DEBUG", "fiterInvData", e);
+            nlapiLogExecution("ERROR", "fiterInvData", e);
         }
         return result
     }
@@ -2575,7 +2576,7 @@
                 };
             });
         } catch (e) {
-            nlapiLogExecution("DEBUG", "getGlImpact inv", e);
+            nlapiLogExecution("ERROR", "getGlImpact inv", e);
         }
     }
 }

@@ -248,7 +248,7 @@
                  if (objsReturn.items) createAdjustment(objsReturn);
                  var created = false;
                  if (items.length > 0 && createdFrom) /*updateSoLines(createdFrom, itemIntalled);*/ {
-                     created = createRecordInstalled(installInfo, itemFilter, reportNumber,);
+                     created = createRecordInstalled(installInfo, itemFilter, reportNumber,comments);
                  }
                  //if (created) validateFullInstalled(context.newRecord.id, itemFilter);
              } catch (e) {
