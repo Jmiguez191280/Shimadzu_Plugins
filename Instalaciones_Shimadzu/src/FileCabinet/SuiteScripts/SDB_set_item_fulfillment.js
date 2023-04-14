@@ -233,7 +233,8 @@ define(['N/search', 'N/record'], function (search, record) {
                 id: newRec.id,
                 values: {
                     'custbody_sdb_if_installed': false,
-                    'custrecord_sdb_instaltion_date_rec': null
+                    'custrecord_sdb_instaltion_date_rec': null,
+                    'custrecord_sdb_ir_errormessage':'ERROR create record: '+ e.message
                 }
             });
         }
@@ -345,6 +346,13 @@ define(['N/search', 'N/record'], function (search, record) {
             }
         } catch (e) {
             log.debug('e', e);
+            record.submitFields({
+                type: 'customrecord_sdb_item_installed_rec',
+                id: id,
+                values: {
+                    'custrecord_sdb_ir_errormessage':'ERROR createAdjustment (-): '+ e.message
+                }
+            });
         }
     }
 
