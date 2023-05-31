@@ -22,11 +22,14 @@ define(['N/search', 'N/record'], function (search, record) {
             if (context.type == context.UserEventType.DELETE) return;
             var newRec = context.newRecord;
             var oldRec = context.oldRecord;
-            const rec = record.load({
+           
+
+            var rec = search.lookupFields({
                 type: 'customrecord_sdb_item_installed_rec',
                 id: newRec.id,
-                isDynamic: true,
-            });
+                columns: ['custrecord_sdb_sales_order_rec', 'custrecord_sdb_instaltion_date_rec', 'custrecord_sdb_item_fulfillment_rec', 'custrecord_sdb_subsidiary_rec', 'custrecord_sdb_location_rec',
+                    'custrecord_sdb_account_rec', 'custrecord_sdb_item_rec', 'custrecord_sdb_serial_num_rec', 'custrecord_sdb_qty_installed_rec', 'custrecord_sdb_installed_rec']
+            })
             log.debug('context.type ', context.type);
 
             const edit = newRec.getValue('custrecord_sdb_installed_rec') !== oldRec.getValue('custrecord_sdb_installed_rec');
@@ -40,34 +43,21 @@ define(['N/search', 'N/record'], function (search, record) {
 
             if (edit && newRec.getValue('custrecord_sdb_installed_rec')) {
                 if (!newRec.getValue('custrecord_sdb_instaltion_date_rec')) rec.setValue('custrecord_sdb_instaltion_date_rec', new Date());
-                const createdfrom = search.lookupFields({
-                    type: record.Type.ITEM_FULFILLMENT,
-                    id: rec.getValue('custrecord_sdb_item_fulfillment_rec'),
-                    columns: 'createdfrom'
-                }).createdfrom;
-                log.debug('createdfrom', createdfrom);
-                if (createdfrom) {
-                    rec.setValue('custrecord_sdb_sales_order_rec', createdfrom[0].value);
-                }
-
+               
+                const createdfrom = rec.custrecord_sdb_sales_order_rec.length ? rec.custrecord_sdb_sales_order_rec[0].value : null;
                 // Creating Inventory Adjustment
                 const data = {}
-                data.itemFulFill = rec.getValue('custrecord_sdb_item_fulfillment_rec');
-                data.subsidiary = rec.getValue('custrecord_sdb_subsidiary_rec');
-                data.location = rec.getValue('custrecord_sdb_location_rec');
-                data.accountId = rec.getValue('custrecord_sdb_account_rec');
+                data.itemFulFill = rec.custrecord_sdb_item_fulfillment_rec.length ? rec.custrecord_sdb_item_fulfillment_rec[0].value : '';
+                data.subsidiary = rec.custrecord_sdb_subsidiary_rec.length ? rec.custrecord_sdb_subsidiary_rec[0].value : '';
+                data.location = rec.custrecord_sdb_location_rec.length ? rec.custrecord_sdb_location_rec[0].value : '';
+                data.accountId = rec.custrecord_sdb_account_rec.length ? rec.custrecord_sdb_account_rec[0].value : '';
                 data.item = {
-                    item: rec.getValue('custrecord_sdb_item_rec'),
-                    lotNumbners: rec.getValue('custrecord_sdb_serial_num_rec'),
-                    qty: rec.getValue('custrecord_sdb_qty_installed_rec'),
+                    item: rec.custrecord_sdb_item_rec.length ? rec.custrecord_sdb_item_rec[0].value : '',
+                    lotNumbners: rec.custrecord_sdb_serial_num_rec ? rec.custrecord_sdb_serial_num_rec : '',
+                    qty: rec.custrecord_sdb_qty_installed_rec ? rec.custrecord_sdb_qty_installed_rec : ''
                 };
 
-                //dpe
-                // log.debug({
-                //     title: 'creating inventory adjustment: lot number',
-                //     details: data.item.lotNumbners
-                // })
-
+               
                 var itemType = search.lookupFields({
                     type: 'item',
                     id: data.item.item,
@@ -106,21 +96,21 @@ define(['N/search', 'N/record'], function (search, record) {
                     var customrecord_sdb_item_installed_recSearchObj = search.create({
                         type: "customrecord_sdb_item_installed_rec",
                         filters:
-                        [
-                           ["custrecord_sdb_inv_adj_installed_rec","anyof","@NONE@"], 
-                           "AND", 
-                           ["custrecord_sdb_item_rec","anyof",data.item.item], 
-                           "AND", 
-                           ["custrecord_sdb_item_fulfillment_rec","anyof",data.itemFulFill]
-                        ],
+                            [
+                                ["custrecord_sdb_inv_adj_installed_rec", "anyof", "@NONE@"],
+                                "AND",
+                                ["custrecord_sdb_item_rec", "anyof", data.item.item],
+                                "AND",
+                                ["custrecord_sdb_item_fulfillment_rec", "anyof", data.itemFulFill]
+                            ],
                         columns:
-                        [
-                           search.createColumn({name: "custrecord_sdb_item_fulfillment_rec", label: "Item Fulfillment"}),
-                        ]
-                     });
-                     var searchResultCount = customrecord_sdb_item_installed_recSearchObj.runPaged().count;
-                     log.debug("customrecord_sdb_item_installed_recSearchObj result count",searchResultCount);
-                    
+                            [
+                                search.createColumn({ name: "custrecord_sdb_item_fulfillment_rec", label: "Item Fulfillment" }),
+                            ]
+                    });
+                    var searchResultCount = customrecord_sdb_item_installed_recSearchObj.runPaged().count;
+                    log.debug("customrecord_sdb_item_installed_recSearchObj result count", searchResultCount);
+
                     invAlreadyExists = customrecord_sdb_item_installed_recSearchObj.runPaged().count == 0;
                 }
                 log.debug('invAlreadyExists', invAlreadyExists);
@@ -130,32 +120,21 @@ define(['N/search', 'N/record'], function (search, record) {
                     log.debug('data<><>', data);
                     const invAdjId = createAdjustment(data, newRec.id);
 
-                    rec.setValue('custrecord_sdb_inv_adj_installed_rec', invAdjId);
-                    // record.submitFields({
-                    //     type: record.Type.ITEM_FULFILLMENT,
-                    //     id: rec.getValue('custrecord_sdb_item_fulfillment'),
-                    //     values: {
-                    //         'custbody_sdb_if_installed': true
-                    //     }
-                    // });
-                    if (fullInstalled) {// Si esta totalmente instalado se chequea como Installed
-                        log.debug('encontro ITEM_FULFILLMENT', rec.getValue('custrecord_sdb_item_fulfillment_rec'))
-                        //  let itemF = record.load({
-                        //      type: record.Type.ITEM_FULFILLMENT,
-                        //      id: rec.getValue('custrecord_sdb_item_fulfillment_rec'),
-                        //       isDynamic: true,
-                        //    })
-                        //    itemF.setValue({
-                        //       fieldId: 'custbody_sdb_if_installed',
-                        //      value: true
-                        //  })
-                        //   itemF.save({
-                        //        ignoreMandatoryFields: true
-                        //   })
 
+                    //    rec.setValue('custrecord_sdb_inv_adj_installed_rec', invAdjId);
+                    record.submitFields({
+                        type: 'customrecord_sdb_item_installed_rec',
+                        id: newRec.id,
+                        values: {
+                            'custrecord_sdb_inv_adj_installed_rec': invAdjId,
+                        }
+                    });
+                   
+                    if (fullInstalled) {// Si esta totalmente instalado se chequea como Installed
+                      
                         record.submitFields({
                             type: record.Type.ITEM_FULFILLMENT,
-                            id: rec.getValue('custrecord_sdb_item_fulfillment_rec'),
+                            id: data.itemFulFill,
                             values: {
                                 custbody_sdb_if_installed: true
                             }
@@ -163,16 +142,9 @@ define(['N/search', 'N/record'], function (search, record) {
                         })
                     }
                     let invoiceId = null;
-                    invoiceId = getInvoice(data.item.item, createdfrom[0].value);
+                    invoiceId = getInvoice(data.item.item, createdfrom);
                     if (invoiceId && fullInstalled) {// Si esta totalmente instalado se chequea como Installed en la invoice
-                        // log.debug('invoiceId', invoiceId);
-                        // record.submitFields({
-                        //     type: record.Type.INVOICE,
-                        //     id: invoiceId,
-                        //     values: {
-                        //         'custbody_sdb_if_installed': true
-                        //     }
-                        // });
+                      
                         log.debug('encontro invoice', invoiceId)
                         record.submitFields({
                             type: record.Type.INVOICE,
@@ -181,35 +153,14 @@ define(['N/search', 'N/record'], function (search, record) {
                                 'custbody_sdb_if_installed': true
                             }
                         });
-                        //  let invoice = record.load({
-                        //     type: record.Type.INVOICE,
-                        //      id: invoiceId,
-                        //     isDynamic: true,
-                        // })
-                        var SOid = createdfrom[0].value;
-                        // invoice.setValue({
-                        //    fieldId: 'custbody_sdb_if_installed',
-                        //      value: true
-                        //  })
-                        //  invoice.save({
-                        //      ignoreMandatoryFields: true
-                        // })
+                       
+                        var SOid = createdfrom;
+                       
                     }
 
                     if (SOid && fullInstalled) {
                         log.debug('encontro SO', SOid)
-                        // let saleOrder = record.load({
-                        //     type: record.Type.SALES_ORDER,
-                        //     id: SOid,
-                        //     isDynamic: true,
-                        // })
-                        // saleOrder.setValue({
-                        //     fieldId: 'custbody_sdb_if_installed',
-                        //     value: true
-                        // })
-                        // saleOrder.save({
-                        //     ignoreMandatoryFields: true
-                        // })
+                       
                         record.submitFields({
                             type: record.Type.SALES_ORDER,
                             id: SOid,
@@ -217,12 +168,11 @@ define(['N/search', 'N/record'], function (search, record) {
                                 'custbody_sdb_if_installed': true
                             }
                         });
-
                     }
                 }
-                rec.save({
-                    ignoreMandatoryFields: true
-                });
+                // rec.save({
+                //     ignoreMandatoryFields: true
+                // });
             }
             //dpe
         } catch (e) {
@@ -234,7 +184,7 @@ define(['N/search', 'N/record'], function (search, record) {
                 values: {
                     'custbody_sdb_if_installed': false,
                     'custrecord_sdb_instaltion_date_rec': null,
-                    'custrecord_sdb_ir_errormessage':'ERROR create record: '+ e.message
+                    'custrecord_sdb_ir_errormessage': 'ERROR create record: ' + e.message
                 }
             });
         }
@@ -259,11 +209,24 @@ define(['N/search', 'N/record'], function (search, record) {
                     ignoreFieldChange: true
                 })
             }
+
             adjutment.setValue({
                 fieldId: 'custbody_sdb_ifulfill_req_install',
                 value: data.itemFulFill,
                 ignoreFieldChange: true
             })
+
+            adjutment.setValue({
+                fieldId: 'custbody_sdb_install_gl_usage',
+                value: true,
+                ignoreFieldChange: true
+            })
+            adjutment.setValue({
+                fieldId: 'custbody_sdb_adj_for_istallation',
+                value: true,
+                ignoreFieldChange: true
+            })
+
             if (data.item) {
                 var thisItem = data.item;
                 log.debug('thisItem', thisItem);
@@ -350,7 +313,7 @@ define(['N/search', 'N/record'], function (search, record) {
                 type: 'customrecord_sdb_item_installed_rec',
                 id: id,
                 values: {
-                    'custrecord_sdb_ir_errormessage':'ERROR createAdjustment (-): '+ e.message
+                    'custrecord_sdb_ir_errormessage': 'ERROR createAdjustment (-): ' + e.message
                 }
             });
         }
@@ -377,7 +340,7 @@ define(['N/search', 'N/record'], function (search, record) {
             var searchResultCount = customrecord_sdb_item_installedSearchObj.runPaged().count;
             log.debug("customrecord_sdb_item_installedSearchObj  count", searchResultCount);
             customrecord_sdb_item_installedSearchObj.run().each(function (result) {
-               // log.debug('result.getValue(custrecord_sdb_installed_rec)', result.getValue('custrecord_sdb_installed_rec'));
+                // log.debug('result.getValue(custrecord_sdb_installed_rec)', result.getValue('custrecord_sdb_installed_rec'));
                 if (!result.getValue('custrecord_sdb_installed_rec') || result.getValue('custrecord_sdb_installed_rec') == 'F') {
                     fullInstalled = false;
                     log.debug('installed <<>>', false);
