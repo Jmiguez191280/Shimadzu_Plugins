@@ -1,0 +1,37 @@
+{
+    "custrecord_sdb_momento_vta_ci": "25570 Other Fixed Liabilities : Income to be accrued",
+    "custrecord_sdb_adj_acc_puente": "14101 Inventory : Inventory (Interim)",
+    "custrecord_sdb_3ro_acc_if": "12100 Accounts Receivable : Trade AR, 3rd Company",
+    "custrecord_sdb_intercompany_if": "12200 Accounts Receivable : Trade AR, Intercompany",
+    "custrecord_sdb_adj_j1": "14300 Inventory : Goods in Japan",
+    "custrecord_sdb_adj_tr1_tr2": "14200 Inventory : Goods in Transit",
+    "custrecordsdb_adj_a1": "14100 Inventory : Inventory",
+    "custrecord_sdb_iac_location": "IAC",
+    "custrecord_sdb_adj_ds": "14400 Inventory : GOOD IN DS",
+    "custrecord_sdb_is_3ros_acc": "Other Receivable, 3rd Company,Trade AR, 3rd Company",
+    "custrecord_sdb_inv_puente_acc": "41799 Sales : Sales, (Interim)",
+    "custrecord_sdb_inv_art_3ro": "41100 Sales : Sales, 3rd Company",
+    "custrecord_sdb_inv_art_intercom": "41200 Sales : Sales, Intercompany",
+    "custrecord_sdb_inv_cos_intercom": "41290 Sales : Sales, Intercompany Charges",
+    "custrecord_sdb_inv_gasto_3ro": "41190 Sales : Sales, 3rd Comp. Charges",
+    "custrecord_sdb_intercompany_acc_invoice": "Other Receivable, Intercompany,Trade AR, Intercompany",
+    "custrecord_sdb_cost_account": "Capacity Overhead Variance,Capacity Variance,Commission Cost, 3rd Company,Commission Cost, 3rd Discount,Commission Cost, Inter. Disc.,Commission Cost, Intercompany,Cost of Sales, (Interim),Cost of Sales, 3rd Company,Cost of Sales, Intercompany,Direct Cost Applied, 3rd Comp.,Direct Cost Applied, Intercom.,Disc. Received, 3rd Company,Disc. Received, Intercompany,Inventory Adjmt, 3rd Company,Inventory Adjmt, Interompany,Manufactur. Overhead Variance,Material Variance,Other Cost of Sales, 3rd Comp.,Other Cost of Sales, Intercom.,Overhead Applied, 3rd Comp.,Overhead Applied, Intercom.,Purchase Variance, 3rd Comp.,Purchase Variance, Intercom.,Purchase, 3rd Company,Purchase, Intercompany,Subcontracted Variance",
+    "custrecord_sdb_cat_por_cobrar_inv": "Cuentas por cobrar",
+    "custrecord_sdb_inv_item_acc": "41799 Sales : Sales, (Interim)",
+    "custrecord_sdb_cuenta_costo": "51999 Cost of Sales : Cost of Sales, (Interim)",
+    "custrecord_sdb_inv_cost_ic": "51450 Cost of Sales : Cost of Sales, Intercompany",
+    "custrecord_sdb_art_account": "Cost of Sales (Interim),GOOD IN DS,Goods in 3rd party property,Goods in Japan,Goods in Transit,Inventory,Inventory (Interim),Slow Moving Provision",
+    "custrecord_sdb_acc_expense": "401K Contributions,Advertising Expense,After-Sales Service Expense,Allowance for Doubtful Debt,Annual/Long service leave,BPS Patronal,Bank charge,Benefits for Directors,Bonus,Building Maintenance Expenses,Catalog Expense,Cleaning Expense,Compensation for Directors,Depreciation Expense,Electricity,Entertainment Expenses,Exhibition Expense,FONASA - FRL Patronal,Freight Expense,Gas,Group Administrative Expense,Hotel,IT Expenses,Import/Export Expense,Insurance Expense,Insurance Expenses,Internet,Lease Depreciation Expense,Legal Welfare Expense,Legal and Accounting Services,Loss on Writing-off Bad Debt,Lunch Tickets,Meeting Expense,Office Supplies,Other Operating Expense,Other Salaries expenses,Other Welfare Expense,Outsourcing Expense,Packing Expense,Payroll tax/Fringe benefit tax,Phone and Fax,Postage,R&D Expense,Recruitment Fee,Remittance charge,Rental and Lease Expense,Repair Expense,Retirement Benefit,Royalty/Patent Payment,Salary Standard,Salary Surplus,Sales Comission, 3rd Company,Sales Commission, Intercompany,Stationery Expense,Tax and Public Charge,Transport Expenses,Transport Tickets,Traveling Expense,Warehouse Expense,Water,Welfare Expense",
+    "custrecord_sdb_inv_cost_3ro": "51400 Cost of Sales : Cost of Sales, 3rd Company",
+    "custrecord_sdb_adj_iac": "14500 Inventory : Goods in 3rd party property",
+    "custrecord_sdb_discount_puente": "41798 Sales : Sales Discount (Interim)",
+    "custrecord_sdb_discount_inter_acc": "41250 Sales : Sales, Intercompany Discount",
+    "custrecord_sdb_discount_3ro_acc": "41150 Sales : Sales, 3rd Company Discount"
+}
+
+//customlist_sdb_gen_transaction_type
+//["formulatext: {custrecord_sdb_gen_transaction_type}","is","invoice"]
+
+//if la cuenta es 51999 Cost of Sales : Cost of Sales, (Interim) se setea a Debit "51450 Cost of Sales : Cost of Sales, Intercompany" || "51400 Cost of Sales : Cost of Sales, 3rd Company"
+
+//if la cuenta es "41799 Sales : Sales, (Interim)"  se setea "41200 Sales : Sales, Intercompany" || "41100 Sales : Sales, 3rd Company"
